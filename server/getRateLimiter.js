@@ -5,11 +5,11 @@ import tokenBucket from './tokenBucket.js';
 import leakyBucket from './leakyBucket.js';
 
 const algorithms = {
-  fixed: fixedWindow,
-  'sliding-log': slidingLog,
-  'sliding-counter': slidingCounter,
-  token: tokenBucket,
-  leaky: leakyBucket
+  fixedWindow,
+  slidingLog,
+  slidingCounter,
+  tokenBucket,
+  leakyBucket
 };
 
 export function getRateLimiter(name) {

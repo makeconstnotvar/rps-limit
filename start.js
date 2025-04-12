@@ -1,23 +1,26 @@
 import express from 'express';
 import cors from 'cors';
+import path from "path";
 import bodyParser from 'body-parser';
-import * as token from './server/tokenBucket.js';
-import * as leaky from './server/leakyBucket.js';
+import tokenBucket from './server/tokenBucket.js';
+import leakyBucket from './server/leakyBucket.js';
+import slidingCounter from "./server/slidingCounter.js";
+import slidingLog from "./server/slidingLog.js";
 import { getRateLimiter } from './server/getRateLimiter.js';
 import { startTrafficSimulation, stopTrafficSimulation } from './server/trafficGenerator.js';
-import path from "path";
+
 
 const app = express();
 const PORT = 3000;
 
 app.use(cors());
 app.use(bodyParser.json());
-let currentAlgorithmName = 'fixed';
-let currentLimiter = getRateLimiter('fixed');
+let currentAlgorithmName = 'fixedWindow';
+let currentLimiter = getRateLimiter(currentAlgorithmName);
 let stats = { allowed: 0, denied: 0 };
 const distPath = path.resolve('dist');
 app.use(express.static(distPath));
-// Middleware для выбранного алгоритма
+
 app.use((req, res, next) => {
   currentLimiter(req, res, (err) => {
     if (err) return next(err);
@@ -30,7 +33,6 @@ app.use((req, res, next) => {
   });
 });
 
-// API: обновить алгоритм
 app.post('/api/algorithm', (req, res) => {
   const { algorithm } = req.body;
   try {
@@ -43,16 +45,14 @@ app.post('/api/algorithm', (req, res) => {
   }
 });
 
-// API: статистика
 app.get('/api/state', (req, res) => {
-  if (currentAlgorithmName === 'token') return res.json(token.getState());
-  if (currentAlgorithmName === 'leaky') return res.json(leaky.getState());
-  if (currentAlgorithmName === 'sliding-log') return res.json(sliding.getState());
-  if (currentAlgorithmName === 'sliding-counter') return res.json(slidingCount.getState());
+  if (currentAlgorithmName === 'tokenBucket') return res.json(tokenBucket.getState());
+  if (currentAlgorithmName === 'leakyBucket') return res.json(leakyBucket.getState());
+  if (currentAlgorithmName === 'slidingLog') return res.json(slidingLog.getState()); // Импорт отсутствует
+  if (currentAlgorithmName === 'slidingCounter') return res.json(slidingCounter.getState()); // Импорт отсутствует
   res.json({});
 });
 
-// API: запуск/остановка генератора
 app.post('/api/simulator', (req, res) => {
   const { action, rps } = req.body;
   if (action === 'start') {
@@ -65,9 +65,23 @@ app.post('/api/simulator', (req, res) => {
     res.status(400).json({ error: 'Unknown action' });
   }
 });
+
 app.get('/api/stats', (req, res) => {
   res.json(stats);
 });
+
+app.use('/simulated', (req, res, next) => {
+  currentLimiter(req, res, (err) => {
+    if (err) return next(err);
+
+    const denied = res.headersSent;
+    if (denied) stats.denied++;
+    else stats.allowed++;
+
+    next();
+  });
+});
+
 app.get('/simulated', (req, res) => {
   res.send('ok');
 });

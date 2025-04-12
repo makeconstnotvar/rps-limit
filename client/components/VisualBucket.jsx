@@ -1,11 +1,13 @@
 import { useEffect, useState } from "preact/hooks";
 import axios from "axios";
+import slidingLog from "../../server/slidingLog.js";
+import slidingCounter from "../../server/slidingCounter.js";
 
 export default function VisualBucket({ algorithm }) {
   const [state, setState] = useState({});
 
   useEffect(() => {
-    if (!['token', 'leaky'].includes(algorithm)) return;
+    if (!['tokenBucket', 'leakyBucket'].includes(algorithm)) return;
 
     const interval = setInterval(async () => {
       const res = await axios.get('http://localhost:3000/api/state');
@@ -15,7 +17,7 @@ export default function VisualBucket({ algorithm }) {
     return () => clearInterval(interval);
   }, [algorithm]);
 
-  if (algorithm === 'token') {
+  if (algorithm === 'tokenBucket') {
     const { tokens = 0, maxTokens = 20 } = state;
     const filledPercent = (tokens / maxTokens) * 100;
 
@@ -48,7 +50,7 @@ export default function VisualBucket({ algorithm }) {
     );
   }
 
-  if (algorithm === 'leaky') {
+  if (algorithm === 'leakyBucket') {
     const { size = 0, maxSize = 20 } = state;
 
     return (
@@ -71,7 +73,7 @@ export default function VisualBucket({ algorithm }) {
       </div>
     );
   }
-  if (algorithm === 'sliding-log') {
+  if (algorithm === 'slidingLog') {
     const { timestamps = [] } = state;
     const maxAge = 60_000;
 
@@ -110,7 +112,7 @@ export default function VisualBucket({ algorithm }) {
       </div>
     );
   }
-  if (algorithm === 'sliding-counter') {
+  if (algorithm === 'slidingCounter') {
     const { buckets = [] } = state;
 
     const maxCount = Math.max(...buckets.map(b => b.count), 1);

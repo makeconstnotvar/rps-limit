@@ -1,3 +1,9 @@
+import slidingLog from "../../server/slidingLog.js";
+import fixedWindow from "../../server/fixedWindow.js";
+import slidingCounter from "../../server/slidingCounter.js";
+import tokenBucket from "../../server/tokenBucket.js";
+import leakyBucket from "../../server/leakyBucket.js";
+
 export default function Controls({ algorithm, onAlgorithmChange, rps, setRps, running, onToggle }) {
   return (
     <div style={{ marginBottom: '1.5rem' }}>
@@ -7,11 +13,11 @@ export default function Controls({ algorithm, onAlgorithmChange, rps, setRps, ru
           value={algorithm}
           onChange={(e) => onAlgorithmChange(e.target.value)}
         >
-          <option value="fixed">Fixed Window</option>
-          <option value="sliding-log">Sliding Log</option>
-          <option value="sliding-counter">Sliding Counter</option>
-          <option value="token">Token Bucket</option>
-          <option value="leaky">Leaky Bucket</option>
+          <option value="fixedWindow">Fixed Window</option>
+          <option value="slidingLog">Sliding Log</option>
+          <option value="slidingCounter">Sliding Counter</option>
+          <option value="tokenBucket">Token Bucket</option>
+          <option value="leakyBucket">Leaky Bucket</option>
         </select>
       </div>
 
