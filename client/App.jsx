@@ -20,23 +20,41 @@ import VisualBucket from "./components/VisualBucket";
   };
 
   // Запуск / остановка симуляции
-  const toggleSimulation = async () => {
-    if (running) {
-      await axios.post('http://localhost:3000/api/simulator', { action: 'stop' });
-      clearInterval(timer.current);
-      setRunning(false);
-    } else {
-      await axios.post('http://localhost:3000/api/simulator', { action: 'start', rps });
-      timer.current = setInterval(fetchStats, 500);
-      setRunning(true);
-    }
-  };
+   const toggleSimulation = async () => {
+     try {
+       if (running) {
+         // Останавливаем симуляцию
+         await axios.post('http://localhost:3000/api/simulator', { action: 'stop' });
+         if (timer.current) {
+           clearInterval(timer.current);
+           timer.current = null;
+         }
+         setRunning(false);
+       } else {
+         // Запускаем симуляцию
+         await axios.post('http://localhost:3000/api/simulator', { action: 'start', rps });
+         timer.current = setInterval(fetchStats, 500);
+         setRunning(true);
+       }
+     } catch (error) {
+       console.error('Ошибка при управлении симуляцией', error);
+       // В случае ошибки тоже сбрасываем состояние
+       clearInterval(timer.current);
+       timer.current = null;
+       setRunning(false);
+     }
+   };
 
   // Получение статистики
-  const fetchStats = async () => {
-    const res = await axios.get('http://localhost:3000/api/stats');
-    setStats(res.data);
-  };
+   const fetchStats = async () => {
+     try {
+       const res = await axios.get('http://localhost:3000/api/stats');
+       // Обязательно создаем новый объект для триггера перерисовки
+       setStats({...res.data});
+     } catch (error) {
+       console.error('Ошибка при получении статистики', error);
+     }
+   };
 
   // Очистка при размонтировании
   useEffect(() => {

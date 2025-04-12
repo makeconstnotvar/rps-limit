@@ -62,10 +62,13 @@ export default function TrafficChart({ stats }) {
       denied.shift();
     }
 
-    chartRef.current.chart.data.labels = [...labels];
-    chartRef.current.chart.data.datasets[0].data = [...allowed];
-    chartRef.current.chart.data.datasets[1].data = [...denied];
-    chartRef.current.chart.update();
+    // Проверка наличия chart перед обновлением
+    if (chartRef.current && chartRef.current.chart) {
+      chartRef.current.chart.data.labels = [...labels];
+      chartRef.current.chart.data.datasets[0].data = [...allowed];
+      chartRef.current.chart.data.datasets[1].data = [...denied];
+      chartRef.current.chart.update();
+    }
   }, [stats]);
 
   return (

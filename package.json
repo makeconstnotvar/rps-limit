@@ -24,6 +24,7 @@
   "type": "module",
   "scripts": {
     "build-client": "webpack",
+    "watch-client": "webpack --watch",
     "server": "node start.js"
   }
 }

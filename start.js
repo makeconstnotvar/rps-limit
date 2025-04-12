@@ -65,7 +65,9 @@ app.post('/api/simulator', (req, res) => {
     res.status(400).json({ error: 'Unknown action' });
   }
 });
-
+app.get('/api/stats', (req, res) => {
+  res.json(stats);
+});
 app.get('/simulated', (req, res) => {
   res.send('ok');
 });
