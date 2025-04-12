@@ -1,21 +1,9 @@
 import { useEffect, useState } from "preact/hooks";
 import axios from "axios";
-import slidingLog from "../../server/slidingLog.js";
-import slidingCounter from "../../server/slidingCounter.js";
 
-export default function VisualBucket({ algorithm }) {
-  const [state, setState] = useState({});
+export default function VisualBucket({ algorithm, state }) {
 
-  useEffect(() => {
-    if (!['tokenBucket', 'leakyBucket'].includes(algorithm)) return;
 
-    const interval = setInterval(async () => {
-      const res = await axios.get('http://localhost:3000/api/state');
-      setState(res.data);
-    }, 500);
-
-    return () => clearInterval(interval);
-  }, [algorithm]);
 
   if (algorithm === 'tokenBucket') {
     const { tokens = 0, maxTokens = 20 } = state;

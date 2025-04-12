@@ -2,23 +2,25 @@ import express from 'express';
 import cors from 'cors';
 import path from "path";
 import bodyParser from 'body-parser';
-import tokenBucket from './server/tokenBucket.js';
-import leakyBucket from './server/leakyBucket.js';
-import slidingCounter from "./server/slidingCounter.js";
-import slidingLog from "./server/slidingLog.js";
+import {tokenBucket, } from './server/limiters/tokenBucket.js';
+import {leakyBucket, leakyBucketState   } from './server/limiters/leakyBucket.js';
+import {slidingCounter, slidingCounterState} from "./server/limiters/slidingCounter.js";
+import {slidingLog, slidingLogState} from "./server/limiters/slidingLog.js";
 import { getRateLimiter } from './server/getRateLimiter.js';
 import { startTrafficSimulation, stopTrafficSimulation } from './server/trafficGenerator.js';
 
 
 const app = express();
 const PORT = 3000;
-
-app.use(cors());
-app.use(bodyParser.json());
 let currentAlgorithmName = 'fixedWindow';
 let currentLimiter = getRateLimiter(currentAlgorithmName);
 let stats = { allowed: 0, denied: 0 };
 const distPath = path.resolve('dist');
+
+app.use(cors());
+
+app.use(bodyParser.json());
+
 app.use(express.static(distPath));
 
 app.use((req, res, next) => {
@@ -46,10 +48,9 @@ app.post('/api/algorithm', (req, res) => {
 });
 
 app.get('/api/state', (req, res) => {
-  if (currentAlgorithmName === 'tokenBucket') return res.json(tokenBucket.getState());
-  if (currentAlgorithmName === 'leakyBucket') return res.json(leakyBucket.getState());
-  if (currentAlgorithmName === 'slidingLog') return res.json(slidingLog.getState()); // Импорт отсутствует
-  if (currentAlgorithmName === 'slidingCounter') return res.json(slidingCounter.getState()); // Импорт отсутствует
+  if (currentAlgorithmName === 'leakyBucket') return res.json(leakyBucketState());
+  if (currentAlgorithmName === 'slidingLog') return res.json(slidingLogState());
+  if (currentAlgorithmName === 'slidingCounter') return res.json(slidingCounterState());
   res.json({});
 });
 

@@ -1,8 +1,8 @@
-import slidingLog from "../../server/slidingLog.js";
-import fixedWindow from "../../server/fixedWindow.js";
-import slidingCounter from "../../server/slidingCounter.js";
-import tokenBucket from "../../server/tokenBucket.js";
-import leakyBucket from "../../server/leakyBucket.js";
+import slidingLog from "../../server/limiters/slidingLog.js";
+import fixedWindow from "../../server/limiters/fixedWindow.js";
+import slidingCounter from "../../server/limiters/slidingCounter.js";
+import tokenBucket from "../../server/limiters/tokenBucket.js";
+import leakyBucket from "../../server/limiters/leakyBucket.js";
 
 export default function Controls({ algorithm, onAlgorithmChange, rps, setRps, running, onToggle }) {
   return (

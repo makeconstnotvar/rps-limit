@@ -27,7 +27,7 @@ function leakyBucket(req, res, next) {
   }
 }
 
-function getState() {
+function leakyBucketState() {
   const [first] = rateLimitQueueMap.values();
   return {
     size: first?.queue.length ?? 0,
@@ -35,5 +35,4 @@ function getState() {
   };
 }
 
-export default leakyBucket;
-export { getState };
+export { leakyBucketState, leakyBucket};

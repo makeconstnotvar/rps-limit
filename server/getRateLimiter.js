@@ -1,8 +1,8 @@
-import fixedWindow from './fixedWindow.js';
-import slidingLog from './slidingLog.js';
-import slidingCounter from './slidingCounter.js';
-import tokenBucket from './tokenBucket.js';
-import leakyBucket from './leakyBucket.js';
+import {fixedWindow} from './limiters/fixedWindow.js';
+import {slidingLog} from './limiters/slidingLog.js';
+import {slidingCounter} from './limiters/slidingCounter.js';
+import {tokenBucket} from './limiters/tokenBucket.js';
+import {leakyBucket} from './limiters/leakyBucket.js';
 
 const algorithms = {
   fixedWindow,

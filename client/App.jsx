@@ -11,6 +11,19 @@ function App() {
   const [running, setRunning] = useState(false);
   const [stats, setStats] = useState({allowed: 0, denied: 0});
   const timer = useRef(null);
+  const [state, setState] = useState({});
+  let interval;
+
+  useEffect(() => {
+    if (['fixedWindow', 'tokenBucket'].includes(algorithm)) return;
+
+    interval = setInterval(async () => {
+      const res = await axios.get('http://localhost:3000/api/state');
+      setState(res.data);
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [algorithm]);
 
   // Обновление алгоритма
   const changeAlgorithm = async (algo) => {
@@ -29,6 +42,8 @@ function App() {
           clearInterval(timer.current);
           timer.current = null;
         }
+        if (interval)
+          clearInterval(interval)
         setRunning(false);
       } else {
         // Запускаем симуляцию
@@ -76,7 +91,7 @@ function App() {
         running={running}
         onToggle={toggleSimulation}
       />
-      <VisualBucket algorithm={algorithm}/>
+      <VisualBucket algorithm={algorithm} state={state}/>
       <StatsDisplay stats={stats}/>
       <TrafficChart stats={stats}/>
     </div>

@@ -29,7 +29,7 @@ function slidingCounter(req, res, next) {
   }
 }
 
-function getState() {
+function slidingCounterState() {
   const [buckets] = rateLimitBucketMap.values();
   const now = Math.floor(Date.now() / BUCKET_SIZE);
   if (!buckets) return { buckets: [] };
@@ -44,5 +44,4 @@ function getState() {
   };
 }
 
-export default slidingCounter;
-export { getState };
+export { slidingCounterState,slidingCounter };

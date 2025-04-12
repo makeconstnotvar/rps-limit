@@ -24,12 +24,11 @@ function slidingLog(req, res, next) {
   }
 }
 
-function getState() {
+function slidingLogState() {
   const [first] = rateLimitLogMap.values();
   return {
     timestamps: (first ?? []).map(ts => Date.now() - ts) // возраст каждой метки в мс
   };
 }
 
-export default slidingLog;
-export { getState };
+export { slidingLogState,slidingLog };

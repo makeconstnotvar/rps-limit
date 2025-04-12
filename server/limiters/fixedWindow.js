@@ -2,7 +2,7 @@ const rateLimitMap = new Map();
 const WINDOW_SIZE = 60 * 1000; // 1 минута
 const MAX_REQUESTS = 20;
 
-export default function fixedWindow(req, res, next) {
+ function fixedWindow(req, res, next) {
   const ip = req.ip;
   const now = Date.now();
   const entry = rateLimitMap.get(ip) || { count: 0, start: now };
@@ -22,3 +22,4 @@ export default function fixedWindow(req, res, next) {
     next();
   }
 }
+export{fixedWindow}
