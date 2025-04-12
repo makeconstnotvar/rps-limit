@@ -1,35 +1,53 @@
-import {useEffect, useRef, useState} from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import axios from 'axios';
-import Controls from './components/Controls.jsx';
+import { Controls } from './components/Controls.jsx';
 import StatsDisplay from './components/StatsDisplay.jsx';
-import TrafficChart from './components/TrafficChart.jsx';
+import { TrafficChart } from './components/TrafficChart.jsx';
 import VisualBucket from "./components/VisualBucket";
 
-function App() {
+export function App() {
   const [algorithm, setAlgorithm] = useState('fixedWindow');
   const [rps, setRps] = useState(5);
   const [running, setRunning] = useState(false);
   const [stats, setStats] = useState({allowed: 0, denied: 0});
   const timer = useRef(null);
+  const intervalRef = useRef(null);
   const [state, setState] = useState({});
-  let interval;
 
   useEffect(() => {
     if (['fixedWindow', 'tokenBucket'].includes(algorithm)) return;
 
-    interval = setInterval(async () => {
-      const res = await axios.get('http://localhost:3000/api/state');
-      setState(res.data);
+    // Очистка предыдущего интервала
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+
+    intervalRef.current = setInterval(async () => {
+      try {
+        const res = await axios.get('http://localhost:3000/api/state');
+        setState(res.data);
+      } catch (error) {
+        console.error('Ошибка при получении состояния:', error);
+      }
     }, 500);
 
-    return () => clearInterval(interval);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
   }, [algorithm]);
 
   // Обновление алгоритма
   const changeAlgorithm = async (algo) => {
     setAlgorithm(algo);
-    await axios.post('http://localhost:3000/api/algorithm', {algorithm: algo});
-    setStats({allowed: 0, denied: 0});
+    try {
+      await axios.post('http://localhost:3000/api/algorithm', {algorithm: algo});
+      setStats({allowed: 0, denied: 0});
+    } catch (error) {
+      console.error('Ошибка при смене алгоритма:', error);
+    }
   };
 
   // Запуск / остановка симуляции
@@ -42,8 +60,6 @@ function App() {
           clearInterval(timer.current);
           timer.current = null;
         }
-        if (interval)
-          clearInterval(interval)
         setRunning(false);
       } else {
         // Запускаем симуляцию
@@ -54,8 +70,10 @@ function App() {
     } catch (error) {
       console.error('Ошибка при управлении симуляцией', error);
       // В случае ошибки тоже сбрасываем состояние
-      clearInterval(timer.current);
-      timer.current = null;
+      if (timer.current) {
+        clearInterval(timer.current);
+        timer.current = null;
+      }
       setRunning(false);
     }
   };
@@ -74,8 +92,14 @@ function App() {
   // Очистка при размонтировании
   useEffect(() => {
     return () => {
-      clearInterval(timer.current);
-      axios.post('http://localhost:3000/api/simulator', {action: 'stop'});
+      if (timer.current) {
+        clearInterval(timer.current);
+      }
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      axios.post('http://localhost:3000/api/simulator', {action: 'stop'})
+        .catch(error => console.error('Ошибка при остановке симуляции:', error));
     };
   }, []);
 
@@ -97,5 +121,3 @@ function App() {
     </div>
   );
 }
-
-export {App}

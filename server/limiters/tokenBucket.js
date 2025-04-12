@@ -2,7 +2,7 @@ const rateLimitTokenMap = new Map();
 const MAX_TOKENS = 20;
 const REFILL_RATE = 1; // токен в секунду
 
-function tokenBucket(req, res, next) {
+export function tokenBucket(req, res, next) {
   const ip = req.ip;
   const now = Date.now();
 
@@ -28,4 +28,10 @@ function tokenBucket(req, res, next) {
   }
 }
 
-export {tokenBucket}
+export function tokenBucketState() {
+  const [bucket] = rateLimitTokenMap.values();
+  return {
+    tokens: bucket?.tokens ?? MAX_TOKENS,
+    maxTokens: MAX_TOKENS
+  };
+}

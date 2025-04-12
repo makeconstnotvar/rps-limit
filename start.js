@@ -2,12 +2,13 @@ import express from 'express';
 import cors from 'cors';
 import path from "path";
 import bodyParser from 'body-parser';
-import {tokenBucket, } from './server/limiters/tokenBucket.js';
+import {tokenBucket, tokenBucketState,} from './server/limiters/tokenBucket.js';
 import {leakyBucket, leakyBucketState   } from './server/limiters/leakyBucket.js';
 import {slidingCounter, slidingCounterState} from "./server/limiters/slidingCounter.js";
 import {slidingLog, slidingLogState} from "./server/limiters/slidingLog.js";
 import { getRateLimiter } from './server/getRateLimiter.js';
 import { startTrafficSimulation, stopTrafficSimulation } from './server/trafficGenerator.js';
+import {fixedWindowState} from "./server/limiters/fixedWindow.js";
 
 
 const app = express();
@@ -51,6 +52,8 @@ app.get('/api/state', (req, res) => {
   if (currentAlgorithmName === 'leakyBucket') return res.json(leakyBucketState());
   if (currentAlgorithmName === 'slidingLog') return res.json(slidingLogState());
   if (currentAlgorithmName === 'slidingCounter') return res.json(slidingCounterState());
+  if (currentAlgorithmName === 'tokenBucket') return res.json(tokenBucketState());
+  if (currentAlgorithmName === 'fixedWindow') return res.json(fixedWindowState());
   res.json({});
 });
 

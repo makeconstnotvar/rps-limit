@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'preact/hooks';
 import Chart from 'chart.js/auto';
 
-export default function TrafficChart({ stats }) {
+export function TrafficChart({ stats }) {
   const chartRef = useRef(null);
+  const chartInstance = useRef(null);
   const dataRef = useRef({
     labels: [],
     allowed: [],
@@ -12,7 +13,7 @@ export default function TrafficChart({ stats }) {
   useEffect(() => {
     const ctx = chartRef.current.getContext('2d');
 
-    const chart = new Chart(ctx, {
+    chartInstance.current = new Chart(ctx, {
       type: 'line',
       data: {
         labels: dataRef.current.labels,
@@ -42,7 +43,11 @@ export default function TrafficChart({ stats }) {
       }
     });
 
-    return () => chart.destroy();
+    return () => {
+      if (chartInstance.current) {
+        chartInstance.current.destroy();
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -63,11 +68,11 @@ export default function TrafficChart({ stats }) {
     }
 
     // Проверка наличия chart перед обновлением
-    if (chartRef.current && chartRef.current.chart) {
-      chartRef.current.chart.data.labels = [...labels];
-      chartRef.current.chart.data.datasets[0].data = [...allowed];
-      chartRef.current.chart.data.datasets[1].data = [...denied];
-      chartRef.current.chart.update();
+    if (chartInstance.current) {
+      chartInstance.current.data.labels = [...labels];
+      chartInstance.current.data.datasets[0].data = [...allowed];
+      chartInstance.current.data.datasets[1].data = [...denied];
+      chartInstance.current.update();
     }
   }, [stats]);
 

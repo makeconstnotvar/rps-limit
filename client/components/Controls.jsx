@@ -1,10 +1,4 @@
-import slidingLog from "../../server/limiters/slidingLog.js";
-import fixedWindow from "../../server/limiters/fixedWindow.js";
-import slidingCounter from "../../server/limiters/slidingCounter.js";
-import tokenBucket from "../../server/limiters/tokenBucket.js";
-import leakyBucket from "../../server/limiters/leakyBucket.js";
-
-export default function Controls({ algorithm, onAlgorithmChange, rps, setRps, running, onToggle }) {
+export function Controls({ algorithm, onAlgorithmChange, rps, setRps, running, onToggle }) {
   return (
     <div style={{ marginBottom: '1.5rem' }}>
       <div>
