@@ -31,4 +31,4 @@ function slidingLogState() {
   };
 }
 
-export { slidingLogState,slidingLog };
+export { slidingLog, slidingLogState };

@@ -44,4 +44,4 @@ function slidingCounterState() {
   };
 }
 
-export { slidingCounterState,slidingCounter };
+export { slidingCounter, slidingCounterState };

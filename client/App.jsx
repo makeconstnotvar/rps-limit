@@ -8,47 +8,53 @@ import VisualBucket from "./components/VisualBucket";
 export function App() {
   const [algorithm, setAlgorithm] = useState('fixedWindow');
   const [rps, setRps] = useState(5);
+  const [rpsLimit, setRpsLimit] = useState(20);
   const [running, setRunning] = useState(false);
   const [stats, setStats] = useState({allowed: 0, denied: 0});
   const timer = useRef(null);
-  const intervalRef = useRef(null);
+  const stateTimer = useRef(null);
   const [state, setState] = useState({});
 
-  useEffect(() => {
-    if (['fixedWindow', 'tokenBucket'].includes(algorithm)) return;
-
-    // Очистка предыдущего интервала
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
+  // Обновление состояния
+  const fetchState = async () => {
+    try {
+      const res = await axios.get('http://localhost:3000/api/state');
+      setState(res.data);
+    } catch (error) {
+      console.error('Ошибка при получении состояния:', error);
     }
-
-    intervalRef.current = setInterval(async () => {
-      try {
-        const res = await axios.get('http://localhost:3000/api/state');
-        setState(res.data);
-      } catch (error) {
-        console.error('Ошибка при получении состояния:', error);
-      }
-    }, 500);
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, [algorithm]);
+  };
 
   // Обновление алгоритма
   const changeAlgorithm = async (algo) => {
     setAlgorithm(algo);
     try {
-      await axios.post('http://localhost:3000/api/algorithm', {algorithm: algo});
+      await axios.post('http://localhost:3000/api/algorithm', {
+        algorithm: algo,
+        rpsLimit: algo === 'fixedWindow' ? rpsLimit : undefined
+      });
       setStats({allowed: 0, denied: 0});
+
+      // Получаем актуальное состояние при смене алгоритма
+      if (running) {
+        await fetchState();
+      }
     } catch (error) {
       console.error('Ошибка при смене алгоритма:', error);
     }
   };
+
+  // Обновление лимита RPS
+  useEffect(() => {
+    if (algorithm === 'fixedWindow') {
+      axios.post('http://localhost:3000/api/algorithm', {
+        algorithm,
+        rpsLimit
+      }).catch(error => {
+        console.error('Ошибка при обновлении лимита RPS:', error);
+      });
+    }
+  }, [rpsLimit, algorithm]);
 
   // Запуск / остановка симуляции
   const toggleSimulation = async () => {
@@ -56,15 +62,29 @@ export function App() {
       if (running) {
         // Останавливаем симуляцию
         await axios.post('http://localhost:3000/api/simulator', {action: 'stop'});
+
+        // Очищаем все интервалы
         if (timer.current) {
           clearInterval(timer.current);
           timer.current = null;
         }
+
+        if (stateTimer.current) {
+          clearInterval(stateTimer.current);
+          stateTimer.current = null;
+        }
+
         setRunning(false);
       } else {
         // Запускаем симуляцию
         await axios.post('http://localhost:3000/api/simulator', {action: 'start', rps});
+
+        // Запускаем интервал для получения статистики
         timer.current = setInterval(fetchStats, 500);
+
+        // Запускаем интервал для получения состояния
+        stateTimer.current = setInterval(fetchState, 500);
+
         setRunning(true);
       }
     } catch (error) {
@@ -74,6 +94,12 @@ export function App() {
         clearInterval(timer.current);
         timer.current = null;
       }
+
+      if (stateTimer.current) {
+        clearInterval(stateTimer.current);
+        stateTimer.current = null;
+      }
+
       setRunning(false);
     }
   };
@@ -95,8 +121,8 @@ export function App() {
       if (timer.current) {
         clearInterval(timer.current);
       }
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+      if (stateTimer.current) {
+        clearInterval(stateTimer.current);
       }
       axios.post('http://localhost:3000/api/simulator', {action: 'stop'})
         .catch(error => console.error('Ошибка при остановке симуляции:', error));
@@ -112,12 +138,14 @@ export function App() {
         onAlgorithmChange={changeAlgorithm}
         rps={rps}
         setRps={setRps}
+        rpsLimit={rpsLimit}
+        setRpsLimit={setRpsLimit}
         running={running}
         onToggle={toggleSimulation}
       />
       <VisualBucket algorithm={algorithm} state={state}/>
       <StatsDisplay stats={stats}/>
-      <TrafficChart stats={stats}/>
+      <TrafficChart stats={stats} algorithm={algorithm} rpsLimit={rpsLimit}/>
     </div>
   );
 }

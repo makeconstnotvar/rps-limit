@@ -12,8 +12,18 @@ const algorithms = {
   leakyBucket
 };
 
-export function getRateLimiter(name) {
+export function getRateLimiter(name, rpsLimit) {
   const limiter = algorithms[name];
   if (!limiter) throw new Error('Unknown rate limiting algorithm');
+
+  // If it's the fixedWindow algorithm and rpsLimit is provided, create a wrapper function
+  if (name === 'fixedWindow' && rpsLimit !== undefined) {
+    return (req, res, next) => {
+      // Set the rpsLimit for this request
+      req.rpsLimit = rpsLimit;
+      return limiter(req, res, next);
+    };
+  }
+
   return limiter;
 }

@@ -35,4 +35,4 @@ function leakyBucketState() {
   };
 }
 
-export { leakyBucketState, leakyBucket};
+export { leakyBucket, leakyBucketState };

@@ -1,4 +1,4 @@
-export function Controls({ algorithm, onAlgorithmChange, rps, setRps, running, onToggle }) {
+export function Controls({ algorithm, onAlgorithmChange, rps, setRps, rpsLimit, setRpsLimit, running, onToggle }) {
   return (
     <div style={{ marginBottom: '1.5rem' }}>
       <div>
@@ -16,14 +16,66 @@ export function Controls({ algorithm, onAlgorithmChange, rps, setRps, running, o
       </div>
 
       <div style={{ marginTop: '1rem' }}>
-        <label>⚙️ RPS (запросов/сек): </label>
-        <input
-          type="number"
-          min="1"
-          value={rps}
-          onChange={(e) => setRps(Number(e.target.value))}
-        />
+        <label>⚙️ RPS (запросов/сек): {rps}</label>
+        <div style={{ display: 'flex', alignItems: 'center', marginTop: '0.5rem' }}>
+          <input
+            type="range"
+            min="1"
+            max="100"
+            value={rps}
+            style={{ width: '200px', marginRight: '10px' }}
+            onChange={(e) => {
+              const value = Number(e.target.value);
+              setRps(value);
+            }}
+          />
+          <input
+            type="number"
+            min="1"
+            max="100"
+            value={rps}
+            style={{ width: '60px' }}
+            onChange={(e) => {
+              const value = Number(e.target.value);
+              // Ограничиваем значение между 1 и 100
+              const clampedValue = Math.min(Math.max(1, value), 100);
+              setRps(clampedValue);
+            }}
+          />
+        </div>
       </div>
+
+      {algorithm === 'fixedWindow' && (
+        <div style={{ marginTop: '1rem' }}>
+          <label>🔒 Лимит RPS: {rpsLimit}</label>
+          <div style={{ display: 'flex', alignItems: 'center', marginTop: '0.5rem' }}>
+            <input
+              type="range"
+              min="1"
+              max="100"
+              value={rpsLimit}
+              style={{ width: '200px', marginRight: '10px' }}
+              onChange={(e) => {
+                const value = Number(e.target.value);
+                setRpsLimit(value);
+              }}
+            />
+            <input
+              type="number"
+              min="1"
+              max="100"
+              value={rpsLimit}
+              style={{ width: '60px' }}
+              onChange={(e) => {
+                const value = Number(e.target.value);
+                // Ограничиваем значение между 1 и 100
+                const clampedValue = Math.min(Math.max(1, value), 100);
+                setRpsLimit(clampedValue);
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       <button
         onClick={onToggle}
