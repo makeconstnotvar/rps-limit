@@ -25,6 +25,11 @@ app.use(bodyParser.json());
 app.use(express.static(distPath));
 
 app.use((req, res, next) => {
+  // Исключаем маршрут /simulated, так как для него есть отдельный middleware
+  if (req.path === '/simulated') {
+    return next();
+  }
+
   currentLimiter(req, res, (err) => {
     if (err) return next(err);
 

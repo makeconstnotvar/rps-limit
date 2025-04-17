@@ -16,7 +16,7 @@ export function fixedWindow(req, res, next) {
 
   rateLimitMap.set(ip, entry);
 
-  if (entry.count > MAX_REQUESTS) {
+  if (entry.count >= MAX_REQUESTS) {
     res.status(429).send('Too Many Requests (Fixed Window)');
   } else {
     next();

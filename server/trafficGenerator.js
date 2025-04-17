@@ -9,8 +9,14 @@ export function startTrafficSimulation(rps = 5) {
 
   intervalId = setInterval(() => {
     fetch('http://localhost:3000/simulated') // фейковый маршрут
-      .then(() => {})
-      .catch(() => {});
+      .then(response => {
+        if (!response.ok) {
+          console.error(`Error: ${response.status} ${response.statusText}`);
+        }
+      })
+      .catch(error => {
+        console.error('Fetch error:', error.message);
+      });
   }, delay);
 }
 
