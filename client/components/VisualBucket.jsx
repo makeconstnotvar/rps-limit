@@ -1,39 +1,21 @@
 import { useEffect, useState } from "preact/hooks";
 import axios from "axios";
 
-export default function VisualBucket({ algorithm, state }) {
-
-
-
+export function VisualBucket({ algorithm, state }) {
   if (algorithm === 'tokenBucket') {
     const { tokens = 0, maxTokens = 20 } = state;
     const filledPercent = (tokens / maxTokens) * 100;
 
     return (
-      <div style={{ marginBottom: '2rem' }}>
-        <h3>🎟️ Token Bucket</h3>
-        <div
-          style={{
-            width: '100px',
-            height: '200px',
-            border: '2px solid black',
-            position: 'relative',
-            margin: '0 auto',
-            background: '#eee'
-          }}
-        >
+      <div className="visual-bucket">
+        <h3 className="visual-bucket__title">🎟️ Token Bucket</h3>
+        <div className="visual-bucket__token-container">
           <div
-            style={{
-              position: 'absolute',
-              bottom: 0,
-              width: '100%',
-              height: `${filledPercent}%`,
-              background: 'limegreen',
-              transition: 'height 0.2s ease-out'
-            }}
+            className="visual-bucket__token-level"
+            style={{ height: `${filledPercent}%` }}
           />
         </div>
-        <p style={{ textAlign: 'center' }}>{tokens} / {maxTokens} токенов</p>
+        <p className="visual-bucket__status">{tokens} / {maxTokens} токенов</p>
       </div>
     );
   }
@@ -42,96 +24,67 @@ export default function VisualBucket({ algorithm, state }) {
     const { size = 0, maxSize = 20 } = state;
 
     return (
-      <div style={{ marginBottom: '2rem' }}>
-        <h3>💧 Leaky Bucket</h3>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', flexWrap: 'wrap', maxWidth: '220px', margin: '0 auto' }}>
+      <div className="visual-bucket">
+        <h3 className="visual-bucket__title">💧 Leaky Bucket</h3>
+        <div className="visual-bucket__leaky-container">
           {Array.from({ length: maxSize }).map((_, i) => (
             <div
               key={i}
-              style={{
-                width: '20px',
-                height: '20px',
-                border: '1px solid #aaa',
-                background: i < size ? 'dodgerblue' : '#eee'
-              }}
+              className={`visual-bucket__leaky-item ${i < size ? "visual-bucket__leaky-item--filled" : "visual-bucket__leaky-item--empty"}`}
             />
           ))}
         </div>
-        <p style={{ textAlign: 'center' }}>{size} / {maxSize} в очереди</p>
+        <p className="visual-bucket__status">{size} / {maxSize} в очереди</p>
       </div>
     );
   }
+
   if (algorithm === 'slidingLog') {
     const { timestamps = [] } = state;
     const maxAge = 60_000;
 
     return (
-      <div style={{ marginBottom: '2rem' }}>
-        <h3>📜 Sliding Log</h3>
-        <div
-          style={{
-            position: 'relative',
-            height: '40px',
-            border: '1px solid #aaa',
-            margin: '0 auto',
-            width: '100%',
-            maxWidth: '600px',
-            background: '#f9f9f9'
-          }}
-        >
+      <div className="visual-bucket">
+        <h3 className="visual-bucket__title">📜 Sliding Log</h3>
+        <div className="visual-bucket__sliding-log">
           {timestamps.map((age, i) => {
             const percent = 100 - (age / maxAge) * 100;
             return (
               <div
                 key={i}
-                style={{
-                  position: 'absolute',
-                  left: `${percent}%`,
-                  top: '10px',
-                  width: '6px',
-                  height: '20px',
-                  background: 'tomato'
-                }}
+                className="visual-bucket__log-mark"
+                style={{ left: `${percent}%` }}
               />
             );
           })}
         </div>
-        <p style={{ textAlign: 'center' }}>{timestamps.length} запросов в окне</p>
+        <p className="visual-bucket__status">{timestamps.length} запросов в окне</p>
       </div>
     );
   }
+
   if (algorithm === 'slidingCounter') {
     const { buckets = [] } = state;
-
     const maxCount = Math.max(...buckets.map(b => b.count), 1);
 
     return (
-      <div style={{ marginBottom: '2rem' }}>
-        <h3>🧱 Sliding Counter</h3>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'flex-end',
-          gap: '4px',
-          height: '100px',
-          marginBottom: '0.5rem'
-        }}>
+      <div className="visual-bucket">
+        <h3 className="visual-bucket__title">🧱 Sliding Counter</h3>
+        <div className="visual-bucket__counter-container">
           {buckets.sort((a, b) => a.age - b.age).map((b, i) => (
-            <div key={i} style={{
-              width: '30px',
-              height: `${(b.count / maxCount) * 100}%`,
-              background: '#6495ED',
-              textAlign: 'center',
-              color: 'white',
-              fontSize: '12px'
-            }}>
+            <div
+              key={i}
+              className="visual-bucket__counter-item"
+              style={{ height: `${(b.count / maxCount) * 100}%` }}
+            >
               {b.count}
             </div>
           ))}
         </div>
-        <p style={{ textAlign: 'center' }}>Запросы по бакетам (10 сек)</p>
+        <p className="visual-bucket__status">Запросы по бакетам (10 сек)</p>
       </div>
     );
   }
+
   return null;
 }

@@ -1,0 +1,36 @@
+.controls {
+  margin-bottom: 1.5rem;
+
+  &__algorithm {
+    margin-bottom: 1rem;
+  }
+
+  &__slider-group {
+    display: flex;
+    align-items: center;
+    margin-top: 0.5rem;
+  }
+
+  &__slider {
+    width: 200px;
+    margin-right: 10px;
+  }
+
+  &__input {
+    width: 60px;
+  }
+
+  &__button {
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+
+    &--running {
+      background-color: #ffdddd;
+    }
+  }
+
+  &__group {
+    margin-top: 1rem;
+  }
+}

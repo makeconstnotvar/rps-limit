@@ -1,0 +1,18 @@
+@import 'variables';
+@import 'reset';
+@import 'typography';
+
+@import 'controls';
+@import 'stats-display';
+@import 'traffic-chart';
+@import 'visual-bucket';
+
+
+.app {
+  padding: 2rem;
+  font-family: sans-serif;
+
+  &__title {
+    margin-bottom: 1.5rem;
+  }
+}

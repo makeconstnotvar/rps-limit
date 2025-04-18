@@ -1,9 +1,9 @@
-export default function StatsDisplay({ stats }) {
+export function StatsDisplay({ stats }) {
   return (
-    <div style={{ marginBottom: '2rem' }}>
-      <h3>📊 Статистика</h3>
-      <p>✅ Разрешено: <strong>{stats.allowed}</strong></p>
-      <p>❌ Отклонено: <strong>{stats.denied}</strong></p>
+    <div className="stats-display">
+      <h3 className="stats-display__title">📊 Статистика</h3>
+      <p className="stats-display__stat">✅ Разрешено: <strong>{stats.allowed}</strong></p>
+      <p className="stats-display__stat">❌ Отклонено: <strong>{stats.denied}</strong></p>
     </div>
   );
 }

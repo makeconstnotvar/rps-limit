@@ -1,0 +1,86 @@
+.visual-bucket {
+  margin-bottom: 2rem;
+
+  &__title {
+    margin-bottom: 1rem;
+  }
+
+  &__token-container {
+    width: 100px;
+    height: 200px;
+    border: 2px solid black;
+    position: relative;
+    margin: 0 auto;
+    background: #eee;
+  }
+
+  &__token-level {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background: $token-background;
+    transition: height 0.2s ease-out;
+  }
+
+  &__leaky-container {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    flex-wrap: wrap;
+    max-width: 220px;
+    margin: 0 auto;
+  }
+
+  &__leaky-item {
+    width: 20px;
+    height: 20px;
+    border: 1px solid #aaa;
+
+    &--filled {
+      background: $leaky-bucket-item;
+    }
+
+    &--empty {
+      background: #eee;
+    }
+  }
+
+  &__sliding-log {
+    position: relative;
+    height: 40px;
+    border: 1px solid #aaa;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 600px;
+    background: #f9f9f9;
+  }
+
+  &__log-mark {
+    position: absolute;
+    top: 10px;
+    width: 6px;
+    height: 20px;
+    background: $sliding-log-item;
+  }
+
+  &__counter-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 4px;
+    height: 100px;
+    margin-bottom: 0.5rem;
+  }
+
+  &__counter-item {
+    width: 30px;
+    background: $sliding-counter-item;
+    text-align: center;
+    color: white;
+    font-size: 12px;
+  }
+
+  &__status {
+    text-align: center;
+  }
+}

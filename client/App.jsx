@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import axios from 'axios';
 import { Controls } from './components/Controls.jsx';
-import StatsDisplay from './components/StatsDisplay.jsx';
+import { StatsDisplay } from './components/StatsDisplay.jsx';
 import { TrafficChart } from './components/TrafficChart.jsx';
-import VisualBucket from "./components/VisualBucket";
+import { VisualBucket } from "./components/VisualBucket.jsx";
 
 export function App() {
   const [algorithm, setAlgorithm] = useState('fixedWindow');
@@ -25,7 +25,7 @@ export function App() {
     }
   };
 
-  // Обновление алгоритма
+  // Обновление алгоритма - оставляем эту функцию как была
   const changeAlgorithm = async (algo) => {
     setAlgorithm(algo);
     try {
@@ -130,8 +130,8 @@ export function App() {
   }, []);
 
   return (
-    <div style={{padding: '2rem', fontFamily: 'sans-serif'}}>
-      <h1>🚦 Rate Limiter Playground</h1>
+    <div className="app">
+      <h1 className="app__title">🚦 Rate Limiter Playground</h1>
 
       <Controls
         algorithm={algorithm}

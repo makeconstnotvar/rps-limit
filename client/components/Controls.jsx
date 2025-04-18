@@ -1,7 +1,7 @@
 export function Controls({ algorithm, onAlgorithmChange, rps, setRps, rpsLimit, setRpsLimit, running, onToggle }) {
   return (
-    <div style={{ marginBottom: '1.5rem' }}>
-      <div>
+    <div className="controls">
+      <div className="controls__algorithm">
         <label>🧠 Алгоритм: </label>
         <select
           value={algorithm}
@@ -15,15 +15,15 @@ export function Controls({ algorithm, onAlgorithmChange, rps, setRps, rpsLimit, 
         </select>
       </div>
 
-      <div style={{ marginTop: '1rem' }}>
+      <div className="controls__group">
         <label>⚙️ RPS (запросов/сек): {rps}</label>
-        <div style={{ display: 'flex', alignItems: 'center', marginTop: '0.5rem' }}>
+        <div className="controls__slider-group">
           <input
             type="range"
             min="1"
             max="100"
             value={rps}
-            style={{ width: '200px', marginRight: '10px' }}
+            className="controls__slider"
             onInput={(e) => {
               const value = Number(e.target.value);
               setRps(value);
@@ -38,10 +38,9 @@ export function Controls({ algorithm, onAlgorithmChange, rps, setRps, rpsLimit, 
             min="1"
             max="100"
             value={rps}
-            style={{ width: '60px' }}
+            className="controls__input"
             onChange={(e) => {
               const value = Number(e.target.value);
-              // Ограничиваем значение между 1 и 100
               const clampedValue = Math.min(Math.max(1, value), 100);
               setRps(clampedValue);
             }}
@@ -50,15 +49,15 @@ export function Controls({ algorithm, onAlgorithmChange, rps, setRps, rpsLimit, 
       </div>
 
       {algorithm === 'fixedWindow' && (
-        <div style={{ marginTop: '1rem' }}>
+        <div className="controls__group">
           <label>🔒 Лимит RPS: {rpsLimit}</label>
-          <div style={{ display: 'flex', alignItems: 'center', marginTop: '0.5rem' }}>
+          <div className="controls__slider-group">
             <input
               type="range"
               min="1"
               max="100"
               value={rpsLimit}
-              style={{ width: '200px', marginRight: '10px' }}
+              className="controls__slider"
               onInput={(e) => {
                 const value = Number(e.target.value);
                 setRpsLimit(value);
@@ -73,10 +72,9 @@ export function Controls({ algorithm, onAlgorithmChange, rps, setRps, rpsLimit, 
               min="1"
               max="100"
               value={rpsLimit}
-              style={{ width: '60px' }}
+              className="controls__input"
               onChange={(e) => {
                 const value = Number(e.target.value);
-                // Ограничиваем значение между 1 и 100
                 const clampedValue = Math.min(Math.max(1, value), 100);
                 setRpsLimit(clampedValue);
               }}
@@ -87,7 +85,7 @@ export function Controls({ algorithm, onAlgorithmChange, rps, setRps, rpsLimit, 
 
       <button
         onClick={onToggle}
-        style={{ marginTop: '1rem', padding: '0.5rem 1rem' }}
+        className={`controls__button ${running ? "controls__button--running" : ""}`}
       >
         {running ? '🛑 Остановить' : '▶️ Запустить'}
       </button>

@@ -1,0 +1,29 @@
+// Цветовая палитра
+$primary-color: #61DAFB;
+$secondary-color: #222;
+$background-color: #fff;
+$text-color: #333;
+
+// Токен бакет
+$token-background: limegreen;
+
+// Leaky Bucket
+$leaky-bucket-item: dodgerblue;
+
+// Sliding Log
+$sliding-log-item: tomato;
+
+// Sliding Counter
+$sliding-counter-item: #6495ED;
+
+// Charts
+$allowed-color: rgba(75, 192, 192, 0.7);
+$allowed-border: rgb(75, 192, 192);
+$denied-color: rgba(255, 159, 64, 0.7);
+$denied-border: rgb(255, 159, 64);
+$limit-line-color: rgb(255, 99, 132);
+$limit-fill: rgba(255, 99, 132, 0.7);
+
+// Размеры
+$header-height: 150px;
+$logo-size: 80px;
