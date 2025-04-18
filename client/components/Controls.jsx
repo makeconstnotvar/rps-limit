@@ -24,6 +24,10 @@ export function Controls({ algorithm, onAlgorithmChange, rps, setRps, rpsLimit, 
             max="100"
             value={rps}
             style={{ width: '200px', marginRight: '10px' }}
+            onInput={(e) => {
+              const value = Number(e.target.value);
+              setRps(value);
+            }}
             onChange={(e) => {
               const value = Number(e.target.value);
               setRps(value);
@@ -55,6 +59,10 @@ export function Controls({ algorithm, onAlgorithmChange, rps, setRps, rpsLimit, 
               max="100"
               value={rpsLimit}
               style={{ width: '200px', marginRight: '10px' }}
+              onInput={(e) => {
+                const value = Number(e.target.value);
+                setRpsLimit(value);
+              }}
               onChange={(e) => {
                 const value = Number(e.target.value);
                 setRpsLimit(value);
