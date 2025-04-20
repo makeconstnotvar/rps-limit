@@ -86,11 +86,6 @@ export function App() {
           });
       }, interval);
 
-      // Интервал для обновления состояния лимитера
-      stateTimer.current = setInterval(async () => {
-        await fetchState();
-      }, 500);
-
       setRunning(true);
     }
   };
