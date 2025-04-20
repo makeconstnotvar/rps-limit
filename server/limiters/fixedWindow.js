@@ -1,40 +1,30 @@
 const rateLimitMap = new Map();
 const WINDOW_SIZE = 1000; // 1 секунда
-let MAX_REQUESTS = 20; // Максимум запросов в секунду по умолчанию
+let MAX_REQUESTS = 20; // Значение по умолчанию
 
 export function fixedWindow(req, res, next) {
-  // Update MAX_REQUESTS if rpsLimit is provided
+  // Обновляем MAX_REQUESTS, если передан лимит
   if (req.rpsLimit !== undefined) {
     MAX_REQUESTS = req.rpsLimit;
   }
 
-  const ip = req.ip;
   const now = Date.now();
-  const entry = rateLimitMap.get(ip) || { count: 0, start: now };
+  const entry = rateLimitMap.get('global') || { count: 0, start: now };
 
-  // Если окно истекло, начинаем новое
-  if (now - entry.start > WINDOW_SIZE) {
+  // Если окно истекло, сбрасываем счетчик
+  if (now - entry.start >= WINDOW_SIZE) {
     entry.count = 1;
     entry.start = now;
-  } else {
-    entry.count += 1;
+    rateLimitMap.set('global', entry);
+    return next();
   }
 
-  rateLimitMap.set(ip, entry);
-
-  // Если превышен лимит запросов в секунду
-  if (entry.count > MAX_REQUESTS) {
-    res.status(429).send('Too Many Requests (Fixed Window)');
-  } else {
-    next();
+  // Проверяем лимит запросов
+  if (entry.count >= MAX_REQUESTS) {
+    return res.status(429).send('Too Many Requests (Fixed Window)');
   }
-}
 
-export function fixedWindowState() {
-  const [entry] = rateLimitMap.values();
-  return {
-    count: entry?.count ?? 0,
-    maxCount: MAX_REQUESTS,
-    timeLeft: entry ? Math.max(0, WINDOW_SIZE - (Date.now() - entry.start)) : WINDOW_SIZE
-  };
+  entry.count++;
+  rateLimitMap.set('global', entry);
+  next();
 }

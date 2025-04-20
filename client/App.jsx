@@ -15,17 +15,6 @@ export function App() {
   const stateTimer = useRef(null);
   const [state, setState] = useState({});
 
-  // Обновление состояния
-  const fetchState = async () => {
-    try {
-      const res = await axios.get('http://localhost:3000/api/state');
-      setState(res.data);
-    } catch (error) {
-      console.error('Ошибка при получении состояния:', error);
-    }
-  };
-
-  // Обновление алгоритма - оставляем эту функцию как была
   const changeAlgorithm = async (algo) => {
     setAlgorithm(algo);
     try {
@@ -44,7 +33,6 @@ export function App() {
     }
   };
 
-  // Обновление лимита RPS
   useEffect(() => {
     if (algorithm === 'fixedWindow') {
       axios.post('http://localhost:3000/api/algorithm', {
@@ -106,21 +94,6 @@ export function App() {
       setRunning(true);
     }
   };
-
-
-  // Очистка при размонтировании
-  useEffect(() => {
-    return () => {
-      if (timer.current) {
-        clearInterval(timer.current);
-      }
-      if (stateTimer.current) {
-        clearInterval(stateTimer.current);
-      }
-      axios.post('http://localhost:3000/api/simulator', {action: 'stop'})
-        .catch(error => console.error('Ошибка при остановке симуляции:', error));
-    };
-  }, []);
 
   return (
     <div className="app">
