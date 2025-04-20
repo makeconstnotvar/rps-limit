@@ -58,30 +58,55 @@ export function App() {
 
   const toggleSimulation = async () => {
     if (running) {
+      // Останавливаем симуляцию на клиенте
       if (timer.current) {
         clearInterval(timer.current);
         timer.current = null;
       }
+
+      if (stateTimer.current) {
+        clearInterval(stateTimer.current);
+        stateTimer.current = null;
+      }
+
       setRunning(false);
     } else {
+      // Сбрасываем статистику при старте
+      setStats({allowed: 0, denied: 0});
+
+      // Запускаем симуляцию на клиенте
       const interval = 1000 / rps;
+
       timer.current = setInterval(() => {
-        axios.get('http://localhost:3000/api/test')
+        axios.get(`http://localhost:3000/api/test`)
+          .then(() => {
+            // Засчитываем разрешенный запрос
+            setStats(prevStats => ({
+              ...prevStats,
+              allowed: prevStats.allowed + 1
+            }));
+          })
           .catch(error => {
+            // Проверяем, был ли запрос заблокирован из-за rate limiting
+            if (error.response && error.response.status === 429) {
+              // Засчитываем заблокированный запрос
+              setStats(prevStats => ({
+                ...prevStats,
+                denied: prevStats.denied + 1
+              }));
+            }
           });
       }, interval);
+
+      // Интервал для обновления состояния лимитера
+      stateTimer.current = setInterval(async () => {
+        await fetchState();
+      }, 500);
+
       setRunning(true);
     }
   };
 
-  const fetchStats = async () => {
-    try {
-      const res = await axios.get('http://localhost:3000/api/stats');
-      setStats({...res.data});
-    } catch (error) {
-      console.error('Ошибка при получении статистики', error);
-    }
-  };
 
   // Очистка при размонтировании
   useEffect(() => {
