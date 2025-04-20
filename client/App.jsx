@@ -1,14 +1,14 @@
-import { useEffect, useRef, useState } from 'preact/hooks';
+import {useEffect, useRef, useState} from 'preact/hooks';
 import axios from 'axios';
-import { Controls } from './components/Controls.jsx';
-import { StatsDisplay } from './components/StatsDisplay.jsx';
-import { TrafficChart } from './components/TrafficChart.jsx';
-import { VisualBucket } from "./components/VisualBucket.jsx";
+import {Controls} from './components/Controls.jsx';
+import {StatsDisplay} from './components/StatsDisplay.jsx';
+import {TrafficChart} from './components/TrafficChart.jsx';
+import {VisualBucket} from "./components/VisualBucket.jsx";
 
 export function App() {
   const [algorithm, setAlgorithm] = useState('fixedWindow');
-  const [rps, setRps] = useState(5);
-  const [rpsLimit, setRpsLimit] = useState(20);
+  const [rps, setRps] = useState(6);
+  const [rpsLimit, setRpsLimit] = useState(5);
   const [running, setRunning] = useState(false);
   const [stats, setStats] = useState({allowed: 0, denied: 0});
   const timer = useRef(null);
@@ -56,59 +56,27 @@ export function App() {
     }
   }, [rpsLimit, algorithm]);
 
-  // Запуск / остановка симуляции
   const toggleSimulation = async () => {
-    try {
-      if (running) {
-        // Останавливаем симуляцию
-        await axios.post('http://localhost:3000/api/simulator', {action: 'stop'});
-
-        // Очищаем все интервалы
-        if (timer.current) {
-          clearInterval(timer.current);
-          timer.current = null;
-        }
-
-        if (stateTimer.current) {
-          clearInterval(stateTimer.current);
-          stateTimer.current = null;
-        }
-
-        setRunning(false);
-      } else {
-        // Запускаем симуляцию
-        await axios.post('http://localhost:3000/api/simulator', {action: 'start', rps});
-
-        // Запускаем интервал для получения статистики
-        timer.current = setInterval(fetchStats, 500);
-
-        // Запускаем интервал для получения состояния
-        stateTimer.current = setInterval(fetchState, 500);
-
-        setRunning(true);
-      }
-    } catch (error) {
-      console.error('Ошибка при управлении симуляцией', error);
-      // В случае ошибки тоже сбрасываем состояние
+    if (running) {
       if (timer.current) {
         clearInterval(timer.current);
         timer.current = null;
       }
-
-      if (stateTimer.current) {
-        clearInterval(stateTimer.current);
-        stateTimer.current = null;
-      }
-
       setRunning(false);
+    } else {
+      const interval = 1000 / rps;
+      timer.current = setInterval(() => {
+        axios.get('http://localhost:3000/api/test')
+          .catch(error => {
+          });
+      }, interval);
+      setRunning(true);
     }
   };
 
-  // Получение статистики
   const fetchStats = async () => {
     try {
       const res = await axios.get('http://localhost:3000/api/stats');
-      // Обязательно создаем новый объект для триггера перерисовки
       setStats({...res.data});
     } catch (error) {
       console.error('Ошибка при получении статистики', error);

@@ -47,6 +47,7 @@ function updateRequestsPerSecond(allowed, denied) {
   if (allowed) entry.allowed++;
   if (denied) entry.denied++;
 }
+
 const distPath = path.resolve('dist');
 
 app.use(cors());
@@ -54,28 +55,6 @@ app.use(cors());
 app.use(bodyParser.json());
 
 app.use(express.static(distPath));
-
-app.use((req, res, next) => {
-  // Исключаем маршрут /simulated, так как для него есть отдельный middleware
-  if (req.path === '/simulated') {
-    return next();
-  }
-
-  currentLimiter(req, res, (err) => {
-    if (err) return next(err);
-
-    const denied = res.headersSent;
-    if (denied) {
-      stats.denied++;
-      updateRequestsPerSecond(false, true);
-    } else {
-      stats.allowed++;
-      updateRequestsPerSecond(true, false);
-    }
-
-    next();
-  });
-});
 
 app.post('/api/algorithm', (req, res) => {
   const { algorithm, rpsLimit } = req.body;
@@ -108,20 +87,6 @@ app.get('/api/state', (req, res) => {
   if (currentAlgorithmName === 'fixedWindow') return res.json(fixedWindowState());
   res.json({});
 });
-
-app.post('/api/simulator', (req, res) => {
-  const { action, rps } = req.body;
-  if (action === 'start') {
-    startTrafficSimulation(rps);
-    res.json({ started: true });
-  } else if (action === 'stop') {
-    stopTrafficSimulation();
-    res.json({ stopped: true });
-  } else {
-    res.status(400).json({ error: 'Unknown action' });
-  }
-});
-
 app.get('/api/stats', (req, res) => {
   // Get the latest entry
   const latestEntry = requestsPerSecond[requestsPerSecond.length - 1];
@@ -135,25 +100,8 @@ app.get('/api/stats', (req, res) => {
   });
 });
 
-app.use('/simulated', (req, res, next) => {
-  currentLimiter(req, res, (err) => {
-    if (err) return next(err);
-
-    const denied = res.headersSent;
-    if (denied) {
-      stats.denied++;
-      updateRequestsPerSecond(false, true);
-    } else {
-      stats.allowed++;
-      updateRequestsPerSecond(true, false);
-    }
-
-    next();
-  });
-});
-
-app.get('/simulated', (req, res) => {
-  res.send('ok');
+app.get('/api/test', currentLimiter, (req, res) => {
+    res.json({ ok: true });
 });
 
 let temp = path.resolve('dist/index.html')
