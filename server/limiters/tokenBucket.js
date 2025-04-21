@@ -1,37 +1,45 @@
-const rateLimitTokenMap = new Map();
-const MAX_TOKENS = 20;
-const REFILL_RATE = 1; // токен в секунду
+export function tokenBucket(options = {}) {
+  const {
+    limit = 5,         // лимит RPS по умолчанию
+    maxTokens = 5,     // максимум токенов по умолчанию
+    refillRate = 5,    // скорость пополнения (токенов/сек) по умолчанию
+    keyGenerator = req => req.ip // генератор ключа по умолчанию
+  } = options;
 
-export function tokenBucket(req, res, next) {
-  const ip = req.ip;
-  const now = Date.now();
+  const rateLimitTokenMap = new Map();
 
-  let bucket = rateLimitTokenMap.get(ip);
-  if (!bucket) {
-    bucket = {tokens: MAX_TOKENS, lastRefill: now};
+  function tokenBucketState() {
+    const [bucket] = rateLimitTokenMap.values();
+    return {
+      tokens: bucket?.tokens ?? maxTokens,
+      maxTokens: maxTokens
+    };
   }
 
-  const elapsed = (now - bucket.lastRefill) / 1000;
-  const refill = Math.floor(elapsed * REFILL_RATE);
+  return function tokenBucketMiddleware(req, res, next) {
+    const now = Date.now();
+    const key = keyGenerator(req);
 
-  if (refill > 0) {
-    bucket.tokens = Math.min(MAX_TOKENS, bucket.tokens + refill);
-    bucket.lastRefill = now;
-  }
+    let bucket = rateLimitTokenMap.get(key);
+    if (!bucket) {
+      bucket = { tokens: maxTokens, lastRefill: now };
+      rateLimitTokenMap.set(key, bucket);
+    }
 
-  if (bucket.tokens < 1) {
-    res.status(429).send('Too Many Requests (Token Bucket)');
-  } else {
-    bucket.tokens -= 1;
-    rateLimitTokenMap.set(ip, bucket);
-    next();
-  }
-}
+    // Рассчитываем пополнение
+    const elapsed = (now - bucket.lastRefill) / 1000;
+    const refill = Math.floor(elapsed * refillRate);
 
-export function tokenBucketState() {
-  const [bucket] = rateLimitTokenMap.values();
-  return {
-    tokens: bucket?.tokens ?? MAX_TOKENS,
-    maxTokens: MAX_TOKENS
+    if (refill > 0) {
+      bucket.tokens = Math.min(maxTokens, bucket.tokens + refill);
+      bucket.lastRefill = now;
+    }
+
+    if (bucket.tokens < 1) {
+      res.status(429).send('Too Many Requests (Token Bucket)');
+    } else {
+      bucket.tokens -= 1;
+      next();
+    }
   };
 }

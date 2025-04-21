@@ -1,98 +1,107 @@
-import {useEffect, useRef, useState} from 'preact/hooks';
+import { useEffect, useRef, useState, useCallback } from 'preact/hooks';
 import axios from 'axios';
-import {Controls} from './components/Controls.jsx';
-import {StatsDisplay} from './components/StatsDisplay.jsx';
-import {TrafficChart} from './components/TrafficChart.jsx';
-import {VisualBucket} from "./components/VisualBucket.jsx";
+import { Controls } from './components/Controls.jsx';
+import { StatsDisplay } from './components/StatsDisplay.jsx';
+import { TrafficChart } from './components/TrafficChart.jsx';
 
 export function App() {
   const [algorithm, setAlgorithm] = useState('fixedWindow');
   const [rps, setRps] = useState(6);
   const [rpsLimit, setRpsLimit] = useState(5);
   const [running, setRunning] = useState(false);
-  const [stats, setStats] = useState({allowed: 0, denied: 0});
+  const [stats, setStats] = useState({ allowed: 0, denied: 0 });
+  const [testRequests, setTestRequests] = useState(10);
   const timer = useRef(null);
-  const stateTimer = useRef(null);
-  const [state, setState] = useState({});
+  const statsHistory = useRef([]);
+
+  // Обновляем алгоритм и лимит на сервере
+  const updateServerConfig = useCallback(async () => {
+    try {
+      await axios.post('http://localhost:3000/api/algorithm', {
+        algorithm,
+        rpsLimit
+      });
+    } catch (error) {
+      console.error('Ошибка конфигурации:', error);
+    }
+  }, [algorithm, rpsLimit]);
 
   const changeAlgorithm = async (algo) => {
     setAlgorithm(algo);
-    try {
-      await axios.post('http://localhost:3000/api/algorithm', {
-        algorithm: algo,
-        rpsLimit: algo === 'fixedWindow' ? rpsLimit : undefined
-      });
-      setStats({allowed: 0, denied: 0});
-
-      // Получаем актуальное состояние при смене алгоритма
-      if (running) {
-        await fetchState();
-      }
-    } catch (error) {
-      console.error('Ошибка при смене алгоритма:', error);
-    }
+    await updateServerConfig();
+    setStats({ allowed: 0, denied: 0 });
+    statsHistory.current = [];
   };
 
   useEffect(() => {
-    if (algorithm === 'fixedWindow') {
-      axios.post('http://localhost:3000/api/algorithm', {
-        algorithm,
-        rpsLimit
-      }).catch(error => {
-        console.error('Ошибка при обновлении лимита RPS:', error);
-      });
-    }
-  }, [rpsLimit, algorithm]);
+    updateServerConfig();
+  }, [rpsLimit, updateServerConfig]);
 
-  const toggleSimulation = async () => {
+  const testRun = useCallback(async () => {
+    setStats({ allowed: 0, denied: 0 });
+    statsHistory.current = [];
+    
+    for (let i = 0; i < testRequests; i++) {
+      try {
+        await axios.get(`http://localhost:3000/api/test`);
+        setStats(prev => ({...prev, allowed: prev.allowed + 1}));
+      } catch (error) {
+        if (error.response?.status === 429) {
+          setStats(prev => ({...prev, denied: prev.denied + 1}));
+        }
+      }
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }, [testRequests]);
+
+  const toggleSimulation = () => {
     if (running) {
-      // Останавливаем симуляцию на клиенте
-      if (timer.current) {
-        clearInterval(timer.current);
-        timer.current = null;
-      }
-
-      if (stateTimer.current) {
-        clearInterval(stateTimer.current);
-        stateTimer.current = null;
-      }
-
+      clearInterval(timer.current);
+      timer.current = null;
       setRunning(false);
-    } else {
-      // Сбрасываем статистику при старте
-      setStats({allowed: 0, denied: 0});
-
-      // Запускаем симуляцию на клиенте
-      const interval = 1000 / rps;
-
-      timer.current = setInterval(() => {
-        axios.get(`http://localhost:3000/api/test`)
-          .then(() => {
-            // Засчитываем разрешенный запрос
-            setStats(prevStats => ({
-              ...prevStats,
-              allowed: prevStats.allowed + 1
-            }));
-          })
-          .catch(error => {
-            // Проверяем, был ли запрос заблокирован из-за rate limiting
-            if (error.response && error.response.status === 429) {
-              // Засчитываем заблокированный запрос
-              setStats(prevStats => ({
-                ...prevStats,
-                denied: prevStats.denied + 1
-              }));
-            }
-          });
-      }, interval);
-
-      // Интервал для обновления состояния лимитера
-      stateTimer.current = setInterval(async () => {
-        await fetchState();
-      }, 500);
-
-      setRunning(true);
+      return;
     }
+
+    setStats({ allowed: 0, denied: 0 });
+    statsHistory.current = [];
+    const interval = 1000 / rps;
+
+    timer.current = setInterval(async () => {
+      try {
+        await axios.get(`http://localhost:3000/api/test`);
+        setStats(prev => ({...prev, allowed: prev.allowed + 1}));
+      } catch (error) {
+        if (error.response?.status === 429) {
+          setStats(prev => ({...prev, denied: prev.denied + 1}));
+        }
+      }
+      
+      // Обновляем историю для графика в реальном времени
+      const now = Date.now();
+      const currentWindow = Math.floor(now / 1000); // 1-секундные окна
+      
+      if (!statsHistory.current[currentWindow]) {
+        statsHistory.current[currentWindow] = { 
+          timestamp: currentWindow,
+          allowed: 0,
+          denied: 0 
+        };
+        
+        // Удаляем старые окна (больше 20 секунд)
+        const oldestAllowed = currentWindow - 20;
+        Object.keys(statsHistory.current).forEach(key => {
+          if (key < oldestAllowed) {
+            delete statsHistory.current[key];
+          }
+        });
+      }
+      
+      // Обновляем текущее окно
+      statsHistory.current[currentWindow].allowed = stats.allowed;
+      statsHistory.current[currentWindow].denied = stats.denied;
+    }, interval);
+
+    setRunning(true);
   };
 
   return (
@@ -108,10 +117,12 @@ export function App() {
         setRpsLimit={setRpsLimit}
         running={running}
         onToggle={toggleSimulation}
+        testRequests={testRequests}
+        setTestRequests={setTestRequests}
+        onTestRun={testRun}
       />
-      <VisualBucket algorithm={algorithm} state={state}/>
-      <StatsDisplay stats={stats}/>
-      <TrafficChart stats={stats} algorithm={algorithm} rpsLimit={rpsLimit}/>
+      <StatsDisplay stats={stats} />
+      <TrafficChart stats={statsHistory.current} algorithm={algorithm} rpsLimit={rpsLimit} />
     </div>
   );
 }
