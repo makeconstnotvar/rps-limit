@@ -90,8 +90,8 @@ export function TrafficChart({ stats, algorithm, rpsLimit }) {
   }, [stats, rpsLimit]);
 
   return (
-    <div className="traffic-chart">
-      <h3 className="traffic-chart__title">📊 Статистика запросов</h3>
+    <div className="card p-3">
+      <h3 className="h5 mb-3">📊 Статистика запросов</h3>
       <div className="traffic-chart__container">
         <canvas ref={chartRef}></canvas>
       </div>

@@ -134,24 +134,35 @@ export function App() {
   };
 
   return (
-    <div className="app">
-      <h1 className="app__title">🚦 Rate Limiter Playground</h1>
+    <div className="container py-4">
+      <h1 className="text-center mb-4">🚦 Rate Limiter Playground</h1>
 
-      <Controls
-        algorithm={algorithm}
-        onAlgorithmChange={changeAlgorithm}
-        rps={rps}
-        setRps={setRps}
-        rpsLimit={rpsLimit}
-        setRpsLimit={setRpsLimit}
-        running={running}
-        onToggle={toggleSimulation}
-        testRequests={testRequests}
-        setTestRequests={setTestRequests}
-        onTestRun={testRun}
-      />
-      <StatsDisplay stats={stats} />
-      <TrafficChart stats={Object.values(statsHistory.current)} algorithm={algorithm} rpsLimit={rpsLimit} />
+      <div className="row">
+        <div className="col-md-6 mb-4">
+          <Controls
+            algorithm={algorithm}
+            onAlgorithmChange={changeAlgorithm}
+            rps={rps}
+            setRps={setRps}
+            rpsLimit={rpsLimit}
+            setRpsLimit={setRpsLimit}
+            running={running}
+            onToggle={toggleSimulation}
+            testRequests={testRequests}
+            setTestRequests={setTestRequests}
+            onTestRun={testRun}
+          />
+        </div>
+        <div className="col-md-6 mb-4">
+          <StatsDisplay stats={stats} />
+        </div>
+      </div>
+
+      <div className="row">
+        <div className="col-12">
+          <TrafficChart stats={statsHistory.current} algorithm={algorithm} rpsLimit={rpsLimit} />
+        </div>
+      </div>
     </div>
   );
 }

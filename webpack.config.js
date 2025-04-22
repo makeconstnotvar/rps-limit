@@ -36,7 +36,12 @@ export default {
         use: [
           'style-loader',
           'css-loader',
-          'sass-loader'
+          {
+            loader: 'sass-loader',
+            options: {
+              additionalData: '@import "~bootstrap/scss/bootstrap";'
+            }
+          }
         ]
       },
       {

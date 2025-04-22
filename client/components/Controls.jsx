@@ -12,10 +12,11 @@ export function Controls({
   onTestRun
 }) {
   return (
-    <div className="controls">
-      <div className="controls__algorithm">
-        <label>Алгоритм: </label>
+    <div className="card p-3 mb-3">
+      <div className="mb-3">
+        <label className="form-label">Алгоритм: </label>
         <select
+          className="form-select"
           value={algorithm}
           onChange={(e) => onAlgorithmChange(e.target.value)}
         >
@@ -26,68 +27,84 @@ export function Controls({
           <option value="leakyBucket">Leaky Bucket</option>
         </select>
       </div>
-      <div className="controls__group">
-        <label>Нагрузка RPS: {rps}</label>
-        <div className="controls__slider-group">
-          <input type="range" min="1" max="100" value={rps}
-                 className="controls__slider"
-                 onInput={(e) => {
-                   const value = Number(e.target.value);
-                   setRps(value);
-                 }}
-                 onChange={(e) => {
-                   const value = Number(e.target.value);
-                   setRps(value);
-                 }}
+      <div className="mb-3">
+        <label className="form-label">Нагрузка RPS: {rps}</label>
+        <div className="d-flex align-items-center gap-3">
+          <input 
+            type="range" 
+            min="1" 
+            max="100" 
+            value={rps}
+            className="form-range"
+            onInput={(e) => setRps(Number(e.target.value))}
+            onChange={(e) => setRps(Number(e.target.value))}
           />
           <input
-            type="number" min="1" max="100" value={rps} className="controls__input"
+            type="number" 
+            min="1" 
+            max="100" 
+            value={rps} 
+            className="form-control w-25"
             onChange={(e) => {
               const value = Number(e.target.value);
-              const clampedValue = Math.min(Math.max(1, value), 100);
-              setRps(clampedValue);
+              setRps(Math.min(Math.max(1, value), 100));
             }}
           />
         </div>
       </div>
-      <div className="controls__group">
-        <label>Лимит RPS: {rpsLimit}</label>
-        <div className="controls__slider-group">
-          <input type="range" min="1" max="100" value={rpsLimit} className="controls__slider"
-                 onInput={(e) => {
-                   const value = Number(e.target.value);
-                   setRpsLimit(value);
-                 }}
-                 onChange={(e) => {
-                   const value = Number(e.target.value);
-                   setRpsLimit(value);
-                 }}/>
-          <input type="number" min="1" max="100" value={rpsLimit} className="controls__input"
-                 onChange={(e) => {
-                   const value = Number(e.target.value);
-                   const clampedValue = Math.min(Math.max(1, value), 100);
-                   setRpsLimit(clampedValue);
-                 }}/>
+      <div className="mb-3">
+        <label className="form-label">Лимит RPS: {rpsLimit}</label>
+        <div className="d-flex align-items-center gap-3">
+          <input 
+            type="range" 
+            min="1" 
+            max="100" 
+            value={rpsLimit}
+            className="form-range"
+            onInput={(e) => setRpsLimit(Number(e.target.value))}
+            onChange={(e) => setRpsLimit(Number(e.target.value))}
+          />
+          <input
+            type="number" 
+            min="1" 
+            max="100" 
+            value={rpsLimit} 
+            className="form-control w-25"
+            onChange={(e) => {
+              const value = Number(e.target.value);
+              setRpsLimit(Math.min(Math.max(1, value), 100));
+            }}
+          />
         </div>
       </div>
-      <button onClick={onToggle} className={`controls__button ${running ? "controls__button--running" : ""}`}>
+      <button 
+        onClick={onToggle} 
+        className={`btn ${running ? 'btn-danger' : 'btn-primary'} mb-3 w-100`}
+      >
         {running ? '🛑 Остановить' : '▶️ Запустить'}
       </button>
-      <div className="controls__group">
-        <label>Тестовый запуск (кол-во запросов):</label>
-        <div className="controls__slider-group">
-          <button onClick={onTestRun} className="controls__button" disabled={running}>🚀 Запустить тест</button>
+
+      <div className="mb-3">
+        <label className="form-label">Тестовый запуск (кол-во запросов):</label>
+        <div className="d-flex align-items-center gap-3">
+          <button 
+            onClick={onTestRun} 
+            className="btn btn-secondary" 
+            disabled={running}
+          >
+            🚀 Запустить тест
+          </button>
           <input
-            type="text"
+            type="number"
+            min="1"
+            max="10"
             value={testRequests}
-            className="controls__input"
+            className="form-control w-25"
             onChange={(e) => {
               const value = e.target.value;
-              // Проверяем, что введено число
               if (/^\d*$/.test(value)) {
                 const numValue = Number(value);
-                const clampedValue = Math.min(Math.max(1, numValue), 10);
-                setTestRequests(clampedValue);
+                setTestRequests(Math.min(Math.max(1, numValue), 10));
               }
             }}
           />
