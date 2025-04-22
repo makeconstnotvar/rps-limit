@@ -1,34 +1,40 @@
-const rateLimitLogMap = new Map();
-const WINDOW_SIZE = 60 * 1000;
-const MAX_REQUESTS = 20;
+export function slidingLog(options = {}) {
+  const {
+    windowSize = 1000, // 1 секунда по умолчанию
+    limit = 5,         // лимит RPS по умолчанию
+    keyGenerator = req => req.ip // генератор ключа по умолчанию
+  } = options;
 
-function slidingLog(req, res, next) {
-  const ip = req.ip;
-  const now = Date.now();
+  const rateLimitLogMap = new Map();
 
-  if (!rateLimitLogMap.has(ip)) {
-    rateLimitLogMap.set(ip, []);
+  function slidingLogState() {
+    const [first] = rateLimitLogMap.values();
+    return {
+      timestamps: (first ?? []).map(ts => Date.now() - ts) // возраст каждой метки в мс
+    };
   }
 
-  const timestamps = rateLimitLogMap.get(ip);
+  return function slidingLogMiddleware(req, res, next) {
+    const now = Date.now();
+    const key = keyGenerator(req);
 
-  while (timestamps.length && now - timestamps[0] > WINDOW_SIZE) {
-    timestamps.shift();
-  }
+    if (!rateLimitLogMap.has(key)) {
+      rateLimitLogMap.set(key, []);
+    }
 
-  if (timestamps.length >= MAX_REQUESTS) {
-    res.status(429).send('Too Many Requests (Sliding Log)');
-  } else {
-    timestamps.push(now);
-    next();
-  }
-}
+    const timestamps = rateLimitLogMap.get(key);
 
-function slidingLogState() {
-  const [first] = rateLimitLogMap.values();
-  return {
-    timestamps: (first ?? []).map(ts => Date.now() - ts) // возраст каждой метки в мс
+    // Удаляем старые метки за пределами окна
+    while (timestamps.length && now - timestamps[0] > windowSize) {
+      timestamps.shift();
+    }
+
+    // Проверяем лимит
+    if (timestamps.length >= limit) {
+      res.status(429).send('Too Many Requests (Sliding Log)');
+    } else {
+      timestamps.push(now);
+      next();
+    }
   };
 }
-
-export { slidingLog, slidingLogState };

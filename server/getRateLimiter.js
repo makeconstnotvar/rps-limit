@@ -4,7 +4,7 @@ import {slidingCounter} from './limiters/slidingCounter.js';
 import {tokenBucket} from './limiters/tokenBucket.js';
 import {leakyBucket} from './limiters/leakyBucket.js';
 
-const algorithms = {
+const algorithmFactories = {
   fixedWindow,
   slidingLog,
   slidingCounter,
@@ -12,18 +12,20 @@ const algorithms = {
   leakyBucket
 };
 
-export function getRateLimiter(name, rpsLimit) {
-  const limiter = algorithms[name];
-  if (!limiter) throw new Error('Unknown rate limiting algorithm');
+const limitersCache = new Map();
 
-  // If it's the fixedWindow algorithm and rpsLimit is provided, create a wrapper function
-  if (name === 'fixedWindow' && rpsLimit !== undefined) {
-    return (req, res, next) => {
-      // Set the rpsLimit for this request
-      req.rpsLimit = rpsLimit;
-      return limiter(req, res, next);
-    };
+export function getRateLimiter(name, rpsLimit = 5) {
+  const factory = algorithmFactories[name];
+  if (!factory) throw new Error('Unknown rate limiting algorithm');
+
+  // Кешируем лимитеры с одинаковыми параметрами
+  const cacheKey = `${name}:${rpsLimit}`;
+  if (!limitersCache.has(cacheKey)) {
+    limitersCache.set(cacheKey, factory({
+      limit: rpsLimit,
+      windowSize: 1000 // 1 секунда по умолчанию
+    }));
   }
 
-  return limiter;
+  return limitersCache.get(cacheKey);
 }

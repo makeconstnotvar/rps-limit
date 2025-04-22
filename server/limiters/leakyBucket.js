@@ -1,38 +1,46 @@
-const rateLimitQueueMap = new Map();
-const MAX_QUEUE_SIZE = 20;
-const PROCESS_RATE = 1;
+export function leakyBucket(options = {}) {
+  const {
+    limit = 5,         // лимит RPS по умолчанию
+    maxQueueSize = 5,  // максимальный размер очереди по умолчанию
+    processRate = 5,   // скорость обработки (запросов/сек) по умолчанию
+    keyGenerator = req => req.ip // генератор ключа по умолчанию
+  } = options;
 
-function leakyBucket(req, res, next) {
-  const ip = req.ip;
-  const now = Date.now();
+  const rateLimitQueueMap = new Map();
 
-  if (!rateLimitQueueMap.has(ip)) {
-    rateLimitQueueMap.set(ip, { queue: [], lastProcessed: now });
+  function leakyBucketState() {
+    const [bucket] = rateLimitQueueMap.values();
+    return {
+      size: bucket?.queue.length ?? 0,
+      maxSize: maxQueueSize
+    };
   }
 
-  const bucket = rateLimitQueueMap.get(ip);
-  const elapsed = (now - bucket.lastProcessed) / 1000;
-  const leaks = Math.floor(elapsed * PROCESS_RATE);
+  return function leakyBucketMiddleware(req, res, next) {
+    const now = Date.now();
+    const key = keyGenerator(req);
 
-  if (leaks > 0) {
-    bucket.queue.splice(0, leaks);
-    bucket.lastProcessed = now;
-  }
+    let bucket = rateLimitQueueMap.get(key);
+    if (!bucket) {
+      bucket = { queue: [], lastProcessed: now };
+      rateLimitQueueMap.set(key, bucket);
+    }
 
-  if (bucket.queue.length >= MAX_QUEUE_SIZE) {
-    res.status(429).send('Too Many Requests (Leaky Bucket)');
-  } else {
+    // Рассчитываем утекшие запросы
+    const elapsed = (now - bucket.lastProcessed) / 1000;
+    const leaks = Math.floor(elapsed * processRate);
+
+    if (leaks > 0) {
+      bucket.queue.splice(0, leaks);
+      bucket.lastProcessed = now;
+    }
+
+    if (bucket.queue.length >= maxQueueSize) {
+      res.status(429).send('Too Many Requests (Leaky Bucket)');
+      return;
+    }
+    
     bucket.queue.push(now);
     next();
-  }
-}
-
-function leakyBucketState() {
-  const [first] = rateLimitQueueMap.values();
-  return {
-    size: first?.queue.length ?? 0,
-    maxSize: MAX_QUEUE_SIZE
   };
 }
-
-export { leakyBucketState, leakyBucket};

@@ -1,47 +1,53 @@
-const rateLimitBucketMap = new Map();
-const WINDOW_SIZE = 60 * 1000;
-const BUCKET_SIZE = 10 * 1000;
-const MAX_REQUESTS = 20;
+export function slidingCounter(options = {}) {
+  const {
+    windowSize = 1000, // 1 секунда по умолчанию
+    bucketSize = 100,  // 100ms сегменты по умолчанию
+    limit = 5,         // лимит RPS по умолчанию
+    keyGenerator = req => req.ip // генератор ключа по умолчанию
+  } = options;
 
-function slidingCounter(req, res, next) {
-  const ip = req.ip;
-  const now = Date.now();
-  const currentBucket = Math.floor(now / BUCKET_SIZE);
+  const rateLimitBucketMap = new Map();
 
-  if (!rateLimitBucketMap.has(ip)) {
-    rateLimitBucketMap.set(ip, new Map());
+  function slidingCounterState() {
+    const [buckets] = rateLimitBucketMap.values();
+    const now = Math.floor(Date.now() / bucketSize);
+    if (!buckets) return { buckets: [] };
+
+    return {
+      buckets: Array.from(buckets.entries())
+        .filter(([bucket]) => (now - bucket) * bucketSize <= windowSize)
+        .map(([bucket, count]) => ({
+          age: (now - bucket) * bucketSize,
+          count
+        }))
+    };
   }
 
-  const buckets = rateLimitBucketMap.get(ip);
-  buckets.set(currentBucket, (buckets.get(currentBucket) || 0) + 1);
+  return function slidingCounterMiddleware(req, res, next) {
+    const now = Date.now();
+    const key = keyGenerator(req);
+    const currentBucket = Math.floor(now / bucketSize);
 
-  for (const [bucket] of buckets) {
-    if ((currentBucket - bucket) * BUCKET_SIZE > WINDOW_SIZE) {
-      buckets.delete(bucket);
+    if (!rateLimitBucketMap.has(key)) {
+      rateLimitBucketMap.set(key, new Map());
     }
-  }
 
-  const total = Array.from(buckets.values()).reduce((sum, n) => sum + n, 0);
-  if (total > MAX_REQUESTS) {
-    res.status(429).send('Too Many Requests (Sliding Counter)');
-  } else {
-    next();
-  }
-}
+    const buckets = rateLimitBucketMap.get(key);
+    buckets.set(currentBucket, (buckets.get(currentBucket) || 0) + 1);
 
-function slidingCounterState() {
-  const [buckets] = rateLimitBucketMap.values();
-  const now = Math.floor(Date.now() / BUCKET_SIZE);
-  if (!buckets) return { buckets: [] };
+    // Удаляем старые сегменты
+    for (const [bucket] of buckets) {
+      if ((currentBucket - bucket) * bucketSize > windowSize) {
+        buckets.delete(bucket);
+      }
+    }
 
-  return {
-    buckets: Array.from(buckets.entries())
-      .filter(([bucket]) => now - bucket <= 6)
-      .map(([bucket, count]) => ({
-        age: now - bucket,
-        count
-      }))
+    // Суммируем активные сегменты
+    const total = Array.from(buckets.values()).reduce((sum, n) => sum + n, 0);
+    if (total > limit) {
+      res.status(429).send('Too Many Requests (Sliding Counter)');
+    } else {
+      next();
+    }
   };
 }
-
-export { slidingCounter, slidingCounterState };
