@@ -11,8 +11,15 @@ export function App() {
   const [running, setRunning] = useState(false);
   const [stats, setStats] = useState({ allowed: 0, denied: 0 });
   const [testRequests, setTestRequests] = useState(10);
+  const [chartData, setChartData] = useState({}); // Новый state для данных графика
   const timer = useRef(null);
   const statsHistory = useRef({});
+
+  // Функция обновления данных графика
+  const updateChartData = useCallback(() => {
+    // Создаем КОПИЮ объекта, а не передаем ссылку
+    setChartData({...statsHistory.current});
+  }, []);
 
   // Обновляем алгоритм и лимит на сервере
   const updateServerConfig = useCallback(async () => {
@@ -26,12 +33,14 @@ export function App() {
     }
   }, [algorithm, rpsLimit]);
 
-  const changeAlgorithm = async (algo) => {
+  // Исправлено: определена функция changeAlgorithm
+  const changeAlgorithm = useCallback(async (algo) => {
     setAlgorithm(algo);
     await updateServerConfig();
     setStats({ allowed: 0, denied: 0 });
     statsHistory.current = {};
-  };
+    setChartData({}); // Очищаем также данные графика
+  }, [updateServerConfig]);
 
   useEffect(() => {
     updateServerConfig();
@@ -40,20 +49,20 @@ export function App() {
   const testRun = useCallback(async () => {
     setStats({ allowed: 0, denied: 0 });
     statsHistory.current = {};
-    
+
     for (let i = 0; i < testRequests; i++) {
       // Обновляем историю для графика
       const now = Date.now();
       const currentWindow = Math.floor(now / 1000);
-      
+
       if (!statsHistory.current[currentWindow]) {
-        statsHistory.current[currentWindow] = { 
+        statsHistory.current[currentWindow] = {
           timestamp: currentWindow,
           allowed: 0,
-          denied: 0 
+          denied: 0
         };
       }
-      
+
       // Выполняем запрос и обновляем статистику
       let requestDenied = false;
       try {
@@ -65,17 +74,20 @@ export function App() {
           requestDenied = true;
         }
       }
-      
+
       // Обновляем статистику в текущем окне
       if (requestDenied) {
         statsHistory.current[currentWindow].denied++;
       } else {
         statsHistory.current[currentWindow].allowed++;
       }
-      
+
+      // Обновляем данные графика после каждого запроса
+      updateChartData();
+
       await new Promise(resolve => setTimeout(resolve, 100));
     }
-  }, [testRequests]);
+  }, [testRequests, updateChartData]);
 
   const toggleSimulation = () => {
     if (running) {
@@ -87,29 +99,30 @@ export function App() {
 
     setStats({ allowed: 0, denied: 0 });
     statsHistory.current = {};
+    updateChartData(); // Очищаем график
     const interval = 1000 / rps;
 
     timer.current = setInterval(async () => {
       // Обновляем историю для графика в реальном времени
       const now = Date.now();
       const currentWindow = Math.floor(now / 1000); // 1-секундные окна
-      
+
       if (!statsHistory.current[currentWindow]) {
-        statsHistory.current[currentWindow] = { 
+        statsHistory.current[currentWindow] = {
           timestamp: currentWindow,
           allowed: 0,
-          denied: 0 
+          denied: 0
         };
-        
+
         // Удаляем старые окна (больше 20 секунд)
         const oldestAllowed = currentWindow - 20;
         Object.keys(statsHistory.current).forEach(key => {
-          if (key < oldestAllowed) {
+          if (Number(key) < oldestAllowed) {
             delete statsHistory.current[key];
           }
         });
       }
-      
+
       // Выполняем запрос и обновляем статистику
       let requestDenied = false;
       try {
@@ -121,13 +134,16 @@ export function App() {
           requestDenied = true;
         }
       }
-      
+
       // Обновляем статистику в текущем окне
       if (requestDenied) {
         statsHistory.current[currentWindow].denied++;
       } else {
         statsHistory.current[currentWindow].allowed++;
       }
+
+      // Обновляем данные графика после каждого запроса
+      updateChartData();
     }, interval);
 
     setRunning(true);
@@ -160,7 +176,7 @@ export function App() {
 
       <div className="row">
         <div className="col-12">
-          <TrafficChart stats={statsHistory.current} algorithm={algorithm} rpsLimit={rpsLimit} />
+          <TrafficChart stats={chartData} algorithm={algorithm} rpsLimit={rpsLimit} />
         </div>
       </div>
     </div>
