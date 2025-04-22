@@ -12,8 +12,14 @@ export function TrafficChart({ stats, algorithm, rpsLimit }) {
       chartInstance.current.destroy();
     }
 
+    // Проверяем, что stats не пустой
+    if (!stats || Object.keys(stats).length === 0) {
+      return;
+    }
+
     // Преобразуем объект статистики в массивы для графика
-    const windows = Object.values(stats).sort((a, b) => a.timestamp - b.timestamp);
+    const windows = Array.isArray(stats) ? stats : Object.values(stats);
+    windows.sort((a, b) => a.timestamp - b.timestamp);
     const labels = windows.map(w => new Date(w.timestamp * 1000).toLocaleTimeString());
     const allowedData = windows.map(w => w.allowed);
     const deniedData = windows.map(w => w.denied);

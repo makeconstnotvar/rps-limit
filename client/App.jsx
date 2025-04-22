@@ -12,7 +12,7 @@ export function App() {
   const [stats, setStats] = useState({ allowed: 0, denied: 0 });
   const [testRequests, setTestRequests] = useState(10);
   const timer = useRef(null);
-  const statsHistory = useRef([]);
+  const statsHistory = useRef({});
 
   // Обновляем алгоритм и лимит на сервере
   const updateServerConfig = useCallback(async () => {
@@ -30,7 +30,7 @@ export function App() {
     setAlgorithm(algo);
     await updateServerConfig();
     setStats({ allowed: 0, denied: 0 });
-    statsHistory.current = [];
+    statsHistory.current = {};
   };
 
   useEffect(() => {
@@ -39,17 +39,40 @@ export function App() {
 
   const testRun = useCallback(async () => {
     setStats({ allowed: 0, denied: 0 });
-    statsHistory.current = [];
+    statsHistory.current = {};
     
     for (let i = 0; i < testRequests; i++) {
+      // Обновляем историю для графика
+      const now = Date.now();
+      const currentWindow = Math.floor(now / 1000);
+      
+      if (!statsHistory.current[currentWindow]) {
+        statsHistory.current[currentWindow] = { 
+          timestamp: currentWindow,
+          allowed: 0,
+          denied: 0 
+        };
+      }
+      
+      // Выполняем запрос и обновляем статистику
+      let requestDenied = false;
       try {
         await axios.get(`http://localhost:3000/api/test`);
         setStats(prev => ({...prev, allowed: prev.allowed + 1}));
       } catch (error) {
         if (error.response?.status === 429) {
           setStats(prev => ({...prev, denied: prev.denied + 1}));
+          requestDenied = true;
         }
       }
+      
+      // Обновляем статистику в текущем окне
+      if (requestDenied) {
+        statsHistory.current[currentWindow].denied++;
+      } else {
+        statsHistory.current[currentWindow].allowed++;
+      }
+      
       await new Promise(resolve => setTimeout(resolve, 100));
     }
   }, [testRequests]);
@@ -63,19 +86,10 @@ export function App() {
     }
 
     setStats({ allowed: 0, denied: 0 });
-    statsHistory.current = [];
+    statsHistory.current = {};
     const interval = 1000 / rps;
 
     timer.current = setInterval(async () => {
-      try {
-        await axios.get(`http://localhost:3000/api/test`);
-        setStats(prev => ({...prev, allowed: prev.allowed + 1}));
-      } catch (error) {
-        if (error.response?.status === 429) {
-          setStats(prev => ({...prev, denied: prev.denied + 1}));
-        }
-      }
-      
       // Обновляем историю для графика в реальном времени
       const now = Date.now();
       const currentWindow = Math.floor(now / 1000); // 1-секундные окна
@@ -96,9 +110,24 @@ export function App() {
         });
       }
       
-      // Обновляем текущее окно
-      statsHistory.current[currentWindow].allowed = stats.allowed;
-      statsHistory.current[currentWindow].denied = stats.denied;
+      // Выполняем запрос и обновляем статистику
+      let requestDenied = false;
+      try {
+        await axios.get(`http://localhost:3000/api/test`);
+        setStats(prev => ({...prev, allowed: prev.allowed + 1}));
+      } catch (error) {
+        if (error.response?.status === 429) {
+          setStats(prev => ({...prev, denied: prev.denied + 1}));
+          requestDenied = true;
+        }
+      }
+      
+      // Обновляем статистику в текущем окне
+      if (requestDenied) {
+        statsHistory.current[currentWindow].denied++;
+      } else {
+        statsHistory.current[currentWindow].allowed++;
+      }
     }, interval);
 
     setRunning(true);
@@ -122,7 +151,7 @@ export function App() {
         onTestRun={testRun}
       />
       <StatsDisplay stats={stats} />
-      <TrafficChart stats={statsHistory.current} algorithm={algorithm} rpsLimit={rpsLimit} />
+      <TrafficChart stats={Object.values(statsHistory.current)} algorithm={algorithm} rpsLimit={rpsLimit} />
     </div>
   );
 }
