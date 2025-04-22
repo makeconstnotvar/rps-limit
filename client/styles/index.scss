@@ -19,14 +19,10 @@ $border-radius-lg: 6px;
 // Подключаем Bootstrap
 @import "~bootstrap/scss/bootstrap";
 
-// Кастомные стили
-.traffic-chart__container {
-  height: 400px;
-  min-height: 400px;
-}
-
 // Общие стили
 body {
   padding: 16px;
   background-color: #f8f9fa;
 }
+
+// Стили для графика теперь задаются inline в компоненте

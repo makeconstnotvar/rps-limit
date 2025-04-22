@@ -92,7 +92,7 @@ export function TrafficChart({ stats, algorithm, rpsLimit }) {
   return (
     <div className="card p-3">
       <h3 className="h5 mb-3">📊 Статистика запросов</h3>
-      <div className="traffic-chart__container">
+      <div style={{height: '400px', position: 'relative'}}>
         <canvas ref={chartRef}></canvas>
       </div>
     </div>
