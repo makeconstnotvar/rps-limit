@@ -18,9 +18,17 @@ export function TrafficChart({ stats, algorithm, rpsLimit }) {
     }
 
     // Преобразуем объект статистики в массивы для графика
-    const windows = Array.isArray(stats) ? stats : Object.values(stats);
+    const windows = Object.values(stats);
+    if (windows.length === 0) return;
+
+    // Сортируем окна по временной метке
     windows.sort((a, b) => a.timestamp - b.timestamp);
-    const labels = windows.map(w => new Date(w.timestamp * 1000).toLocaleTimeString());
+
+    const labels = windows.map(w => {
+      const date = new Date(w.timestamp * 1000);
+      return date.toLocaleTimeString();
+    });
+
     const allowedData = windows.map(w => w.allowed);
     const deniedData = windows.map(w => w.denied);
 
@@ -37,7 +45,7 @@ export function TrafficChart({ stats, algorithm, rpsLimit }) {
             borderWidth: 1
           },
           {
-            label: 'Отклонено', 
+            label: 'Отклонено',
             data: deniedData,
             backgroundColor: 'rgba(255, 99, 132, 0.7)',
             borderColor: 'rgba(255, 99, 132, 1)',
