@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Controls } from './components/Controls.jsx';
 import { StatsDisplay } from './components/StatsDisplay.jsx';
 import { TrafficChart } from './components/TrafficChart.jsx';
-import { VisualBucket } from './components/VisualBucket.jsx';
+import { LimiterVisualizerSwitch } from './illustrations/LimiterVisualizerSwitch.jsx';
 
 export function App() {
   const [algorithm, setAlgorithm] = useState('fixedWindow');
@@ -383,10 +383,11 @@ export function App() {
         <div className="col-12">
           <div className="card p-3">
             <h3 className="h5 mb-3">🎮 Визуализация алгоритма</h3>
-            <VisualBucket 
+            <LimiterVisualizerSwitch 
               algorithm={algorithm} 
-              state={algorithmStates} 
               rpsLimit={rpsLimit} 
+              rps={rps}
+              running={running}
             />
           </div>
         </div>
