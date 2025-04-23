@@ -1,8 +1,67 @@
 .visual-bucket {
   margin-bottom: 2rem;
 
-  &__title {
+  &__header {
+    display: flex;
+    align-items: center;
     margin-bottom: 1rem;
+  }
+
+  &__title {
+    margin-bottom: 0;
+    margin-right: 0.5rem;
+  }
+
+  // Fixed Window
+  &__fixed-window {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+
+  &__window-container {
+    width: 100%;
+    height: 50px;
+    border: 2px solid #333;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 10px;
+    border-radius: 4px;
+  }
+
+  &__progress-bar {
+    height: 100%;
+    background: rgba(0, 0, 0, 0.1);
+    position: absolute;
+    top: 0;
+    left: 0;
+    transition: width 0.2s linear;
+  }
+
+  &__counter {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: bold;
+    z-index: 2;
+    
+    &--over {
+      color: red;
+    }
+  }
+
+  &__timer {
+    font-size: 14px;
+    color: #666;
+  }
+
+  // Token Bucket
+  &__token-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   &__token-container {
@@ -12,6 +71,8 @@
     position: relative;
     margin: 0 auto;
     background: #eee;
+    border-radius: 4px;
+    overflow: hidden;
   }
 
   &__token-level {
@@ -19,48 +80,108 @@
     bottom: 0;
     width: 100%;
     background: $token-background;
-    transition: height 0.2s ease-out;
+    transition: height 0.3s ease-out;
+    
+    &--low {
+      background: #ff9800;
+    }
+  }
+
+  &__token-info {
+    margin-top: 10px;
+    text-align: center;
+  }
+
+  &__refill-rate {
+    font-size: 14px;
+    color: #666;
+    margin-top: 5px;
+  }
+
+  // Leaky Bucket
+  &__leaky-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   &__leaky-container {
-    display: flex;
-    justify-content: center;
-    gap: 4px;
-    flex-wrap: wrap;
-    max-width: 220px;
-    margin: 0 auto;
-  }
-
-  &__leaky-item {
-    width: 20px;
-    height: 20px;
-    border: 1px solid #aaa;
-
-    &--filled {
-      background: $leaky-bucket-item;
-    }
-
-    &--empty {
-      background: #eee;
-    }
-  }
-
-  &__sliding-log {
+    width: 100px;
+    height: 200px;
+    border: 2px solid black;
     position: relative;
-    height: 40px;
-    border: 1px solid #aaa;
     margin: 0 auto;
+    background: #eee;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  &__leaky-level {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background: $leaky-bucket-item;
+    transition: height 0.3s ease-out;
+    
+    &--full {
+      background: #ff5722;
+    }
+  }
+
+  &__leaky-info {
+    margin-top: 10px;
+    text-align: center;
+  }
+
+  &__process-rate {
+    font-size: 14px;
+    color: #666;
+    margin-top: 5px;
+  }
+
+  // Sliding Log
+  &__sliding-log {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+
+  &__log-container {
+    position: relative;
+    height: 60px;
+    border: 1px solid #aaa;
+    background: #f9f9f9;
+    margin-bottom: 10px;
+    overflow: hidden;
     width: 100%;
     max-width: 600px;
-    background: #f9f9f9;
+    border-radius: 4px;
   }
 
   &__log-mark {
     position: absolute;
     top: 10px;
     width: 6px;
-    height: 20px;
+    height: 40px;
     background: $sliding-log-item;
+    border-radius: 2px;
+  }
+
+  &__limit-line {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    border-left: 2px dashed red;
+    z-index: 1;
+  }
+
+  // Sliding Counter
+  &__counter-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
   }
 
   &__counter-container {
@@ -68,8 +189,17 @@
     justify-content: center;
     align-items: flex-end;
     gap: 4px;
-    height: 100px;
+    height: 150px;
     margin-bottom: 0.5rem;
+    width: 100%;
+    max-width: 600px;
+  }
+
+  &__counter-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 30px;
   }
 
   &__counter-item {
@@ -78,9 +208,112 @@
     text-align: center;
     color: white;
     font-size: 12px;
+    border-radius: 2px 2px 0 0;
+    transition: height 0.3s ease-out;
+  }
+
+  &__counter-label {
+    font-size: 10px;
+    color: #666;
+    margin-top: 2px;
+  }
+
+  &__counter-total {
+    margin-top: 10px;
+    font-weight: bold;
   }
 
   &__status {
     text-align: center;
+    
+    &--over {
+      color: red;
+    }
+  }
+
+  // Info Tooltip
+  .info-tooltip {
+    position: relative;
+    display: inline-block;
+    
+    &__trigger {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 0;
+      margin: 0;
+    }
+    
+    &__content {
+      position: absolute;
+      top: calc(100% + 5px);
+      right: 0;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+      width: 250px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      z-index: 10;
+      
+      h5 {
+        margin-top: 0;
+        margin-bottom: 5px;
+      }
+      
+      p {
+        margin-bottom: 0;
+        font-size: 14px;
+      }
+    }
+  }
+
+  // Token Rain Animation
+  .token-rain {
+    position: absolute;
+    top: -20px;
+    left: 0;
+    width: 100%;
+    height: 20px;
+    overflow: hidden;
+    
+    &__drop {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: $token-background;
+      border-radius: 50%;
+      animation: token-fall 1s linear;
+    }
+  }
+
+  // Leaky Flow Animation
+  .leaky-flow {
+    position: absolute;
+    bottom: -30px;
+    left: 0;
+    width: 100%;
+    height: 30px;
+    overflow: hidden;
+    
+    &__drop {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 8px;
+      height: 8px;
+      background: $leaky-bucket-item;
+      border-radius: 50%;
+    }
+  }
+}
+
+@keyframes token-fall {
+  from {
+    transform: translateY(-20px);
+  }
+  to {
+    transform: translateY(220px);
   }
 }
