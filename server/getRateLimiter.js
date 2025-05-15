@@ -19,13 +19,13 @@ export function getRateLimiter(name, rpsLimit = 5) {
   if (!factory) throw new Error('Unknown rate limiting algorithm');
 
   // Кешируем лимитеры с одинаковыми параметрами
-  const cacheKey = `${name}:${rpsLimit}`;
-  if (!limitersCache.has(cacheKey)) {
-    limitersCache.set(cacheKey, factory({
-      limit: rpsLimit,
-      windowSize: 1000 // 1 секунда по умолчанию
-    }));
-  }
+    const cacheKey = `${name}:${rpsLimit}`;
+    if (!limitersCache.has(cacheKey)) {
+      limitersCache.set(cacheKey, factory({
+        limit: rpsLimit,
+        windowSize: 10000 // 10 секунд по умолчанию
+      }));
+    }
 
   return limitersCache.get(cacheKey);
 }

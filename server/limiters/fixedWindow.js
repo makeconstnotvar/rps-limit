@@ -1,6 +1,6 @@
 export function fixedWindow(options = {}) {
   const {
-    windowSize = 1000, // 1 секунда по умолчанию
+    windowSize = 10000, // 10 секунд по умолчанию
     limit = 5,         // лимит RPS по умолчанию
     keyGenerator = req => req.ip // генератор ключа по умолчанию
   } = options;

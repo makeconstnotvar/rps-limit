@@ -18,21 +18,21 @@ export function App() {
   
   // Состояние алгоритмов для визуализации
   const [algorithmStates, setAlgorithmStates] = useState({
-    fixedWindow: {
-      windowStart: Date.now(),
-      windowSize: 1000,
+      fixedWindow: {
+        windowStart: Date.now(),
+        windowSize: 10000,
       count: 0,
       limit: rpsLimit
     },
     slidingLog: {
       timestamps: [],
-      windowSize: 1000,
+      windowSize: 10000,
       limit: rpsLimit
     },
     slidingCounter: {
       buckets: [],
       bucketSize: 100,
-      windowSize: 1000,
+      windowSize: 10000,
       limit: rpsLimit
     },
     tokenBucket: {
@@ -155,21 +155,21 @@ export function App() {
       
       newState.fixedWindow = {
         windowStart: now,
-        windowSize: 1000,
+        windowSize: 10000,
         count: 0,
         limit: rpsLimit
       };
       
       newState.slidingLog = {
         timestamps: [],
-        windowSize: 1000,
+        windowSize: 10000,
         limit: rpsLimit
       };
       
       newState.slidingCounter = {
         buckets: [],
         bucketSize: 100,
-        windowSize: 1000,
+        windowSize: 10000,
         limit: rpsLimit
       };
       
@@ -251,7 +251,7 @@ export function App() {
     setStats({ allowed: 0, denied: 0 });
     statsHistory.current = {};
     updateChartData(); // Очищаем график
-    const interval = 1000 / rps;
+    const interval = 10000 / rps;
 
     timer.current = setInterval(async () => {
       // Обновляем историю для графика в реальном времени

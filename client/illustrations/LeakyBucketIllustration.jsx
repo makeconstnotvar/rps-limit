@@ -43,7 +43,7 @@ export function LeakyBucketIllustration({ rpsLimit, rps, running }) {
       }
       
       lastLeakTimeRef.current = now;
-    }, 1000 / PROCESS_RATE);
+    }, 10000 / PROCESS_RATE);
     
     // Добавление запросов
     const requestInterval = setInterval(() => {
@@ -69,7 +69,7 @@ export function LeakyBucketIllustration({ rpsLimit, rps, running }) {
       if (accepted) {
         setQueue(prev => [...prev, { id: now }]);
       }
-    }, 1000 / rps);
+    }, 10000 / rps);
     
     return () => {
       clearInterval(leakInterval);

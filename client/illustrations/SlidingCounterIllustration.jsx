@@ -66,7 +66,7 @@ export function SlidingCounterIllustration({ rpsLimit, rps, running }) {
       }
       
       setBuckets(newBuckets);
-    }, 1000 / rps);
+    }, 10000 / rps);
     
     return () => clearInterval(interval);
   }, [running, rps, rpsLimit, buckets]);

@@ -45,7 +45,7 @@ export function SlidingLogIllustration({ rpsLimit, rps, running }) {
       } else {
         setTimestamps(newTimestamps);
       }
-    }, 1000 / rps);
+    }, 10000 / rps);
     
     return () => clearInterval(interval);
   }, [running, rps, rpsLimit, timestamps]);

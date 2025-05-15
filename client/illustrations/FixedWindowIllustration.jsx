@@ -9,7 +9,7 @@ export function FixedWindowIllustration({ rpsLimit, rps, running }) {
   const lastRequestTimeRef = useRef(0);
   
   // Константы для анимации
-  const WINDOW_DURATION = 1000; // 1 секунда
+  const WINDOW_DURATION = 10000; // 1 секунда
   const BALL_RADIUS = 10;
   const CONTAINER_HEIGHT = 200;
   const CONTAINER_PADDING = 20;
@@ -48,7 +48,7 @@ export function FixedWindowIllustration({ rpsLimit, rps, running }) {
       if (accepted) {
         setCount(prev => prev + 1);
       }
-    }, 1000 / rps);
+    }, 10000 / rps);
     
     return () => clearInterval(interval);
   }, [running, rps, rpsLimit, windowStart, count]);

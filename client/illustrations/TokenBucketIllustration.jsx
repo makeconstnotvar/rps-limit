@@ -68,7 +68,7 @@ export function TokenBucketIllustration({ rpsLimit, rps, running }) {
       if (accepted) {
         setTokens(prev => Math.max(0, prev - 1));
       }
-    }, 1000 / rps);
+    }, 10000 / rps);
     
     return () => {
       clearInterval(refillInterval);
