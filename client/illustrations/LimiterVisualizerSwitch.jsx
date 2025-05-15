@@ -4,23 +4,23 @@ import { SlidingCounterIllustration } from './SlidingCounterIllustration.jsx';
 import { TokenBucketIllustration } from './TokenBucketIllustration.jsx';
 import { LeakyBucketIllustration } from './LeakyBucketIllustration.jsx';
 
-export function LimiterVisualizerSwitch({ algorithm, rpsLimit, rps, running }) {
+export function LimiterVisualizerSwitch({ algorithm, rpsLimit, rps, running, algorithmState }) {
   // Выбираем компонент визуализации в зависимости от выбранного алгоритма
   switch (algorithm) {
     case 'fixedWindow':
-      return <FixedWindowIllustration rpsLimit={rpsLimit} rps={rps} running={running} />;
+      return <FixedWindowIllustration rpsLimit={rpsLimit} rps={rps} running={running} algorithmState={algorithmState} />;
       
     case 'slidingLog':
-      return <SlidingLogIllustration rpsLimit={rpsLimit} rps={rps} running={running} />;
+      return <SlidingLogIllustration rpsLimit={rpsLimit} rps={rps} running={running} algorithmState={algorithmState} />;
       
     case 'slidingCounter':
-      return <SlidingCounterIllustration rpsLimit={rpsLimit} rps={rps} running={running} />;
+      return <SlidingCounterIllustration rpsLimit={rpsLimit} rps={rps} running={running} algorithmState={algorithmState} />;
       
     case 'tokenBucket':
-      return <TokenBucketIllustration rpsLimit={rpsLimit} rps={rps} running={running} />;
+      return <TokenBucketIllustration rpsLimit={rpsLimit} rps={rps} running={running} algorithmState={algorithmState} />;
       
     case 'leakyBucket':
-      return <LeakyBucketIllustration rpsLimit={rpsLimit} rps={rps} running={running} />;
+      return <LeakyBucketIllustration rpsLimit={rpsLimit} rps={rps} running={running} algorithmState={algorithmState} />;
       
     default:
       return (

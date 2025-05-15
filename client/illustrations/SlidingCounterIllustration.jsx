@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 
-export function SlidingCounterIllustration({ rpsLimit, rps, running }) {
+export function SlidingCounterIllustration({ rpsLimit, rps, running, algorithmState }) {
   const canvasRef = useRef(null);
   const [requests, setRequests] = useState([]);
-  const [buckets, setBuckets] = useState([]);
   const animationFrameRef = useRef(null);
   const lastRequestTimeRef = useRef(0);
   
@@ -24,24 +23,16 @@ export function SlidingCounterIllustration({ rpsLimit, rps, running }) {
       const now = Date.now();
       lastRequestTimeRef.current = now;
       
+      // Получаем бакеты из состояния алгоритма
+      const buckets = algorithmState && 'buckets' in algorithmState 
+        ? algorithmState.buckets 
+        : [];
+      
       // Определяем текущий бакет
       const currentBucketId = Math.floor(now / BUCKET_SIZE);
       
-      // Очищаем устаревшие бакеты
-      const newBuckets = buckets
-        .filter(b => (currentBucketId - b.id) * BUCKET_SIZE <= WINDOW_DURATION)
-        .map(b => ({ ...b }));
-      
-      // Находим или создаем текущий бакет
-      let currentBucket = newBuckets.find(b => b.id === currentBucketId);
-      
-      if (!currentBucket) {
-        currentBucket = { id: currentBucketId, count: 0 };
-        newBuckets.push(currentBucket);
-      }
-      
       // Подсчитываем общее количество запросов в окне
-      const totalCount = newBuckets.reduce((sum, b) => sum + b.count, 0);
+      const totalCount = buckets.reduce((sum, b) => sum + b.count, 0);
       
       // Определяем, будет ли запрос принят
       const accepted = totalCount < rpsLimit;
@@ -59,17 +50,10 @@ export function SlidingCounterIllustration({ rpsLimit, rps, running }) {
           created: now
         }
       ]);
-      
-      // Увеличиваем счетчик принятых запросов в текущем бакете
-      if (accepted) {
-        currentBucket.count++;
-      }
-      
-      setBuckets(newBuckets);
     }, 10000 / rps);
     
     return () => clearInterval(interval);
-  }, [running, rps, rpsLimit, buckets]);
+  }, [running, rps, rpsLimit, algorithmState]);
   
   // Анимация
   useEffect(() => {
@@ -95,6 +79,11 @@ export function SlidingCounterIllustration({ rpsLimit, rps, running }) {
         canvas.width / 2,
         30
       );
+      
+      // Получаем бакеты из состояния алгоритма
+      const buckets = algorithmState && 'buckets' in algorithmState 
+        ? algorithmState.buckets 
+        : [];
       
       // Рисуем бакеты
       const sortedBuckets = [...buckets].sort((a, b) => a.id - b.id);
@@ -234,7 +223,7 @@ export function SlidingCounterIllustration({ rpsLimit, rps, running }) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [requests, buckets, rpsLimit]);
+  }, [requests, algorithmState, rpsLimit]);
   
   // Обновляем размер холста при изменении размера окна
   useEffect(() => {

@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 
-export function LeakyBucketIllustration({ rpsLimit, rps, running }) {
+export function LeakyBucketIllustration({ rpsLimit, rps, running, algorithmState }) {
   const canvasRef = useRef(null);
   const [requests, setRequests] = useState([]);
-  const [queue, setQueue] = useState([]);
   const [leakingDrops, setLeakingDrops] = useState([]);
   const animationFrameRef = useRef(null);
-  const lastLeakTimeRef = useRef(Date.now());
   
   // Константы для анимации
   const BALL_RADIUS = 10;
@@ -19,19 +17,17 @@ export function LeakyBucketIllustration({ rpsLimit, rps, running }) {
   useEffect(() => {
     if (!running) return;
     
-    // Обработка очереди (утечка)
+    // Обработка очереди (утечка) - только для анимации
     const leakInterval = setInterval(() => {
       const now = Date.now();
-      const elapsedSec = (now - lastLeakTimeRef.current) / 1000;
+      
+      // Получаем очередь из состояния алгоритма
+      const queue = algorithmState && 'queue' in algorithmState 
+        ? algorithmState.queue 
+        : [];
       
       // Обрабатываем запросы с заданной скоростью
       if (queue.length > 0) {
-        // Удаляем запрос из начала очереди (FIFO)
-        setQueue(prev => {
-          if (prev.length === 0) return prev;
-          return prev.slice(1);
-        });
-        
         // Добавляем анимацию утекающей капли
         setLeakingDrops(prev => [
           ...prev,
@@ -41,13 +37,16 @@ export function LeakyBucketIllustration({ rpsLimit, rps, running }) {
           }
         ]);
       }
-      
-      lastLeakTimeRef.current = now;
     }, 10000 / PROCESS_RATE);
     
     // Добавление запросов
     const requestInterval = setInterval(() => {
       const now = Date.now();
+      
+      // Получаем очередь из состояния алгоритма
+      const queue = algorithmState && 'queue' in algorithmState 
+        ? algorithmState.queue 
+        : [];
       
       // Определяем, будет ли запрос принят
       const accepted = queue.length < rpsLimit;
@@ -64,18 +63,13 @@ export function LeakyBucketIllustration({ rpsLimit, rps, running }) {
           created: now
         }
       ]);
-      
-      // Добавляем запрос в очередь, если он принят
-      if (accepted) {
-        setQueue(prev => [...prev, { id: now }]);
-      }
     }, 10000 / rps);
     
     return () => {
       clearInterval(leakInterval);
       clearInterval(requestInterval);
     };
-  }, [running, rps, rpsLimit, queue.length]);
+  }, [running, rps, rpsLimit, algorithmState]);
   
   // Анимация
   useEffect(() => {
@@ -115,6 +109,11 @@ export function LeakyBucketIllustration({ rpsLimit, rps, running }) {
         holeWidth, 
         holeHeight
       );
+      
+      // Получаем очередь из состояния алгоритма
+      const queue = algorithmState && 'queue' in algorithmState 
+        ? algorithmState.queue 
+        : [];
       
       // Рисуем запросы в очереди
       const queueHeight = (queue.length / rpsLimit) * BUCKET_HEIGHT;
@@ -235,7 +234,7 @@ export function LeakyBucketIllustration({ rpsLimit, rps, running }) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [requests, leakingDrops, queue, rpsLimit]);
+  }, [requests, leakingDrops, algorithmState, rpsLimit]);
   
   // Обновляем размер холста при изменении размера окна
   useEffect(() => {
@@ -254,10 +253,6 @@ export function LeakyBucketIllustration({ rpsLimit, rps, running }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   
-  // Сбрасываем состояние при изменении лимита
-  useEffect(() => {
-    setQueue([]);
-  }, [rpsLimit]);
   
   return (
     <div className="illustration">

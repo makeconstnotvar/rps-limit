@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 
-export function TokenBucketIllustration({ rpsLimit, rps, running }) {
+export function TokenBucketIllustration({ rpsLimit, rps, running, algorithmState }) {
   const canvasRef = useRef(null);
   const [requests, setRequests] = useState([]);
-  const [tokens, setTokens] = useState(rpsLimit);
   const [refillTokens, setRefillTokens] = useState([]);
   const animationFrameRef = useRef(null);
-  const lastRefillTimeRef = useRef(Date.now());
   
   // Константы для анимации
   const BALL_RADIUS = 10;
@@ -19,16 +17,17 @@ export function TokenBucketIllustration({ rpsLimit, rps, running }) {
   useEffect(() => {
     if (!running) return;
     
-    // Пополнение токенов
+    // Пополнение токенов (только для анимации)
     const refillInterval = setInterval(() => {
       const now = Date.now();
-      const elapsedSec = (now - lastRefillTimeRef.current) / 1000;
       
-      // Пополняем токены с заданной скоростью
+      // Получаем токены из состояния алгоритма
+      const tokens = algorithmState && 'tokens' in algorithmState 
+        ? algorithmState.tokens 
+        : 0;
+      
+      // Добавляем анимацию падающего токена, если токены пополнились
       if (tokens < rpsLimit) {
-        setTokens(prev => Math.min(rpsLimit, prev + 1));
-        
-        // Добавляем анимацию падающего токена
         setRefillTokens(prev => [
           ...prev,
           {
@@ -40,13 +39,16 @@ export function TokenBucketIllustration({ rpsLimit, rps, running }) {
           }
         ]);
       }
-      
-      lastRefillTimeRef.current = now;
     }, 1000 / rpsLimit); // Пополняем со скоростью лимита
     
     // Добавление запросов
     const requestInterval = setInterval(() => {
       const now = Date.now();
+      
+      // Получаем токены из состояния алгоритма
+      const tokens = algorithmState && 'tokens' in algorithmState 
+        ? algorithmState.tokens 
+        : 0;
       
       // Определяем, будет ли запрос принят
       const accepted = tokens > 0;
@@ -63,18 +65,13 @@ export function TokenBucketIllustration({ rpsLimit, rps, running }) {
           created: now
         }
       ]);
-      
-      // Уменьшаем количество токенов при принятии запроса
-      if (accepted) {
-        setTokens(prev => Math.max(0, prev - 1));
-      }
     }, 10000 / rps);
     
     return () => {
       clearInterval(refillInterval);
       clearInterval(requestInterval);
     };
-  }, [running, rps, rpsLimit, tokens]);
+  }, [running, rps, rpsLimit, algorithmState]);
   
   // Анимация
   useEffect(() => {
@@ -107,6 +104,11 @@ export function TokenBucketIllustration({ rpsLimit, rps, running }) {
       // Рисуем дно ведра
       ctx.fillStyle = '#f5f5f5';
       ctx.fillRect(bucketX, bucketY + BUCKET_HEIGHT - 10, BUCKET_WIDTH, 10);
+      
+      // Получаем токены из состояния алгоритма
+      const tokens = algorithmState && 'tokens' in algorithmState 
+        ? algorithmState.tokens 
+        : 0;
       
       // Рисуем токены в ведре
       const tokensPerRow = Math.floor(BUCKET_WIDTH / (TOKEN_RADIUS * 2.5));
@@ -243,7 +245,7 @@ export function TokenBucketIllustration({ rpsLimit, rps, running }) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [requests, refillTokens, tokens, rpsLimit]);
+  }, [requests, refillTokens, algorithmState, rpsLimit]);
   
   // Обновляем размер холста при изменении размера окна
   useEffect(() => {
@@ -262,10 +264,6 @@ export function TokenBucketIllustration({ rpsLimit, rps, running }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   
-  // Сбрасываем состояние при изменении лимита
-  useEffect(() => {
-    setTokens(rpsLimit);
-  }, [rpsLimit]);
   
   return (
     <div className="illustration">

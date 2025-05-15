@@ -1,15 +1,13 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 
-export function FixedWindowIllustration({ rpsLimit, rps, running }) {
+export function FixedWindowIllustration({ rpsLimit, rps, running, algorithmState }) {
   const canvasRef = useRef(null);
   const [requests, setRequests] = useState([]);
-  const [windowStart, setWindowStart] = useState(Date.now());
-  const [count, setCount] = useState(0);
   const animationFrameRef = useRef(null);
   const lastRequestTimeRef = useRef(0);
   
   // Константы для анимации
-  const WINDOW_DURATION = 10000; // 1 секунда
+  const WINDOW_DURATION = 10000; // 10 секунд
   const BALL_RADIUS = 10;
   const CONTAINER_HEIGHT = 200;
   const CONTAINER_PADDING = 20;
@@ -22,14 +20,10 @@ export function FixedWindowIllustration({ rpsLimit, rps, running }) {
       const now = Date.now();
       lastRequestTimeRef.current = now;
       
-      // Проверяем, нужно ли сбросить окно
-      if (now - windowStart > WINDOW_DURATION) {
-        setWindowStart(now);
-        setCount(0);
-      }
-      
       // Определяем, будет ли запрос принят
-      const accepted = count < rpsLimit;
+      const accepted = algorithmState && 'count' in algorithmState 
+        ? algorithmState.count < algorithmState.limit 
+        : false;
       
       // Добавляем новый запрос
       setRequests(prev => [
@@ -43,15 +37,10 @@ export function FixedWindowIllustration({ rpsLimit, rps, running }) {
           created: now
         }
       ]);
-      
-      // Увеличиваем счетчик принятых запросов
-      if (accepted) {
-        setCount(prev => prev + 1);
-      }
     }, 10000 / rps);
     
     return () => clearInterval(interval);
-  }, [running, rps, rpsLimit, windowStart, count]);
+  }, [running, rps, algorithmState]);
   
   // Анимация
   useEffect(() => {
@@ -79,6 +68,14 @@ export function FixedWindowIllustration({ rpsLimit, rps, running }) {
         containerWidth, 
         CONTAINER_HEIGHT
       );
+      
+      // Получаем данные из состояния алгоритма
+      const windowStart = algorithmState && 'windowStart' in algorithmState 
+        ? algorithmState.windowStart 
+        : now;
+      const count = algorithmState && 'count' in algorithmState 
+        ? algorithmState.count 
+        : 0;
       
       // Рисуем прогресс окна
       const elapsed = now - windowStart;
@@ -171,7 +168,7 @@ export function FixedWindowIllustration({ rpsLimit, rps, running }) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [requests, windowStart, count, rpsLimit]);
+  }, [requests, algorithmState, rpsLimit]);
   
   // Обновляем размер холста при изменении размера окна
   useEffect(() => {

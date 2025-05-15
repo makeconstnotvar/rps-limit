@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 
-export function SlidingLogIllustration({ rpsLimit, rps, running }) {
+export function SlidingLogIllustration({ rpsLimit, rps, running, algorithmState }) {
   const canvasRef = useRef(null);
   const [requests, setRequests] = useState([]);
-  const [timestamps, setTimestamps] = useState([]);
   const animationFrameRef = useRef(null);
   const lastRequestTimeRef = useRef(0);
   
@@ -21,11 +20,13 @@ export function SlidingLogIllustration({ rpsLimit, rps, running }) {
       const now = Date.now();
       lastRequestTimeRef.current = now;
       
-      // Очищаем устаревшие метки
-      const newTimestamps = timestamps.filter(ts => now - ts <= WINDOW_DURATION);
+      // Получаем метки времени из состояния алгоритма
+      const timestamps = algorithmState && 'timestamps' in algorithmState 
+        ? algorithmState.timestamps 
+        : [];
       
       // Определяем, будет ли запрос принят
-      const accepted = newTimestamps.length < rpsLimit;
+      const accepted = timestamps.length < rpsLimit;
       
       // Добавляем новый запрос
       setRequests(prev => [
@@ -38,17 +39,10 @@ export function SlidingLogIllustration({ rpsLimit, rps, running }) {
           created: now
         }
       ]);
-      
-      // Добавляем метку времени для принятого запроса
-      if (accepted) {
-        setTimestamps([...newTimestamps, now]);
-      } else {
-        setTimestamps(newTimestamps);
-      }
     }, 10000 / rps);
     
     return () => clearInterval(interval);
-  }, [running, rps, rpsLimit, timestamps]);
+  }, [running, rps, rpsLimit, algorithmState]);
   
   // Анимация
   useEffect(() => {
@@ -118,10 +112,13 @@ export function SlidingLogIllustration({ rpsLimit, rps, running }) {
         timelineTop - 5
       );
       
-      // Обновляем и рисуем метки запросов на шкале
-      const currentTimestamps = timestamps.filter(ts => now - ts <= WINDOW_DURATION);
+      // Получаем метки времени из состояния алгоритма
+      const timestamps = algorithmState && 'timestamps' in algorithmState 
+        ? algorithmState.timestamps 
+        : [];
       
-      currentTimestamps.forEach(ts => {
+      // Обновляем и рисуем метки запросов на шкале
+      timestamps.forEach(ts => {
         const age = now - ts;
         const progress = 1 - age / WINDOW_DURATION; // От 1 до 0
         const x = CONTAINER_PADDING + timelineWidth * progress;
@@ -134,13 +131,13 @@ export function SlidingLogIllustration({ rpsLimit, rps, running }) {
       });
       
       // Рисуем счетчик
-      const isOverLimit = currentTimestamps.length > rpsLimit;
+      const isOverLimit = timestamps.length > rpsLimit;
       
       ctx.fillStyle = isOverLimit ? 'red' : '#333';
       ctx.font = 'bold 16px Arial';
       ctx.textAlign = 'center';
       ctx.fillText(
-        `${currentTimestamps.length} / ${rpsLimit} запросов в окне`,
+        `${timestamps.length} / ${rpsLimit} запросов в окне`,
         canvas.width / 2,
         timelineTop + TIMELINE_HEIGHT + 40
       );
@@ -190,7 +187,7 @@ export function SlidingLogIllustration({ rpsLimit, rps, running }) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [requests, timestamps, rpsLimit]);
+  }, [requests, algorithmState, rpsLimit]);
   
   // Обновляем размер холста при изменении размера окна
   useEffect(() => {
