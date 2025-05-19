@@ -120,12 +120,29 @@ export function FixedWindowIllustration({ rpsLimit, rps, running, algorithmState
             // Преобразуем относительные координаты в абсолютные
             const absX = CONTAINER_PADDING + x * containerWidth;
 
-            // Целевая позиция Y для принятых запросов - внутри контейнера
-            const acceptedTargetY = containerTop + Math.min(CONTAINER_HEIGHT - BALL_RADIUS * 2, count * 10);
+            // Целевая позиция Y для принятых запросов - распределяем внутри контейнера
+            // Вычисляем позицию на основе индекса запроса, а не общего счетчика
+            // Это гарантирует, что каждый запрос будет размещен на своей позиции
+            const acceptedRequests = prev.filter(r => r.accepted).length;
+            const rowCapacity = Math.floor(containerWidth / (BALL_RADIUS * 3));
+            const index = acceptedRequests % (rowCapacity * 4); // Ограничиваем 4 рядами для видимости
 
-            // Если запрос принят и достиг целевой позиции, останавливаем его
+            const row = Math.floor(index / rowCapacity);
+            const col = index % rowCapacity;
+
+            const acceptedTargetY = containerTop + BALL_RADIUS * 2 + row * BALL_RADIUS * 3;
+            const acceptedTargetX = CONTAINER_PADDING + BALL_RADIUS * 2 + col * BALL_RADIUS * 3;
+
+            // Если запрос принят и достиг целевой позиции по Y, фиксируем его
             if (accepted && y >= acceptedTargetY) {
-              return { ...req, y: acceptedTargetY, velocity: 0 };
+              // Для принятых запросов изменяем также X-координату, чтобы выстроить их в ряды
+              const newX = (acceptedTargetX - CONTAINER_PADDING) / containerWidth;
+              return {
+                ...req,
+                y: acceptedTargetY,
+                x: newX,
+                velocity: 0
+              };
             }
 
             // Если запрос отклонен и достиг верха контейнера, отскакиваем
@@ -171,6 +188,7 @@ export function FixedWindowIllustration({ rpsLimit, rps, running, algorithmState
 
       animationFrameRef.current = requestAnimationFrame(animate);
     }
+
 
     animate();
 
