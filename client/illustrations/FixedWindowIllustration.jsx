@@ -4,93 +4,94 @@ export function FixedWindowIllustration({ rpsLimit, rps, running, algorithmState
   const canvasRef = useRef(null);
   const [requests, setRequests] = useState([]);
   const animationFrameRef = useRef(null);
-  const lastRequestTimeRef = useRef(0);
-  
+
   // Константы для анимации
   const WINDOW_DURATION = 10000; // 10 секунд
   const BALL_RADIUS = 10;
-  const CONTAINER_HEIGHT = 200;
-  const CONTAINER_PADDING = 20;
-  
+  const CONTAINER_HEIGHT = 150;
+  const CONTAINER_PADDING = 40;
+
   // Добавление нового запроса
   useEffect(() => {
     if (!running) return;
-    
+
     const interval = setInterval(() => {
       const now = Date.now();
-      lastRequestTimeRef.current = now;
-      
+
+      // Получаем данные из состояния алгоритма
+      const count = algorithmState && 'count' in algorithmState
+        ? algorithmState.count
+        : 0;
+
       // Определяем, будет ли запрос принят
-      const accepted = algorithmState && 'count' in algorithmState 
-        ? algorithmState.count < algorithmState.limit 
-        : false;
-      
-      // Добавляем новый запрос
+      const accepted = count < rpsLimit;
+
+      // Добавляем новый запрос со случайной позицией по X
       setRequests(prev => [
         ...prev,
         {
           id: now,
           x: Math.random() * 0.8 + 0.1, // Позиция по X (от 0.1 до 0.9)
-          y: 0, // Начальная позиция по Y
-          velocity: 0, // Начальная скорость
+          y: -BALL_RADIUS * 2, // Начальная позиция над верхней границей холста
+          velocity: 2, // Начальная скорость падения
           accepted,
           created: now
         }
       ]);
     }, 10000 / rps);
-    
+
     return () => clearInterval(interval);
-  }, [running, rps, algorithmState]);
-  
+  }, [running, rps, rpsLimit, algorithmState]);
+
   // Анимация
   useEffect(() => {
     if (!canvasRef.current) return;
-    
+
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    const gravity = 0.5; // Гравитация для анимации падения
-    
+    const gravity = 0.3; // Гравитация для анимации падения
+
     function animate() {
       const now = Date.now();
-      
+
       // Очищаем холст
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
+
       // Рисуем контейнер
       const containerWidth = canvas.width - 2 * CONTAINER_PADDING;
       const containerTop = canvas.height - CONTAINER_HEIGHT - CONTAINER_PADDING;
-      
+
       ctx.strokeStyle = '#333';
       ctx.lineWidth = 2;
       ctx.strokeRect(
-        CONTAINER_PADDING, 
-        containerTop, 
-        containerWidth, 
+        CONTAINER_PADDING,
+        containerTop,
+        containerWidth,
         CONTAINER_HEIGHT
       );
-      
+
       // Получаем данные из состояния алгоритма
-      const windowStart = algorithmState && 'windowStart' in algorithmState 
-        ? algorithmState.windowStart 
+      const windowStart = algorithmState && 'windowStart' in algorithmState
+        ? algorithmState.windowStart
         : now;
-      const count = algorithmState && 'count' in algorithmState 
-        ? algorithmState.count 
+      const count = algorithmState && 'count' in algorithmState
+        ? algorithmState.count
         : 0;
-      
+
       // Рисуем прогресс окна
       const elapsed = now - windowStart;
       const progress = Math.min(1, elapsed / WINDOW_DURATION);
-      
+
       ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
       ctx.fillRect(
-        CONTAINER_PADDING, 
-        containerTop, 
-        containerWidth * progress, 
+        CONTAINER_PADDING,
+        containerTop,
+        containerWidth * progress,
         CONTAINER_HEIGHT
       );
-      
+
       // Рисуем счетчик
-      ctx.fillStyle = count > rpsLimit ? 'red' : '#333';
+      ctx.fillStyle = count >= rpsLimit ? 'red' : '#333';
       ctx.font = 'bold 16px Arial';
       ctx.textAlign = 'center';
       ctx.fillText(
@@ -98,7 +99,7 @@ export function FixedWindowIllustration({ rpsLimit, rps, running, algorithmState
         canvas.width / 2,
         containerTop + CONTAINER_HEIGHT / 2
       );
-      
+
       // Рисуем таймер
       const timeLeft = Math.max(0, WINDOW_DURATION - elapsed);
       ctx.fillStyle = '#666';
@@ -106,70 +107,80 @@ export function FixedWindowIllustration({ rpsLimit, rps, running, algorithmState
       ctx.fillText(
         `Сброс через: ${(timeLeft / 1000).toFixed(1)}с`,
         canvas.width / 2,
-        containerTop + CONTAINER_HEIGHT + 20
+        containerTop + CONTAINER_HEIGHT + 30
       );
-      
+
       // Обновляем и рисуем запросы
-      setRequests(prev => 
+      setRequests(prev =>
         prev
           .map(req => {
             // Физика движения
             let { x, y, velocity, accepted } = req;
-            
+
             // Преобразуем относительные координаты в абсолютные
             const absX = CONTAINER_PADDING + x * containerWidth;
-            
-            // Если запрос принят и достиг контейнера, останавливаем его
-            const containerY = containerTop - BALL_RADIUS;
-            
-            if (accepted && y >= containerY) {
-              return { ...req, y: containerY, velocity: 0 };
+
+            // Целевая позиция Y для принятых запросов - внутри контейнера
+            const acceptedTargetY = containerTop + Math.min(CONTAINER_HEIGHT - BALL_RADIUS * 2, count * 10);
+
+            // Если запрос принят и достиг целевой позиции, останавливаем его
+            if (accepted && y >= acceptedTargetY) {
+              return { ...req, y: acceptedTargetY, velocity: 0 };
             }
-            
-            // Если запрос отклонен и достиг контейнера, отскакиваем
-            if (!accepted && y >= containerY) {
-              return { 
-                ...req, 
-                y: containerY, 
-                velocity: -velocity * 0.6 // Отскок с потерей энергии
+
+            // Если запрос отклонен и достиг верха контейнера, отскакиваем
+            if (!accepted && y >= containerTop - BALL_RADIUS) {
+              // Если скорость слишком мала для отскока, удаляем запрос
+              if (Math.abs(velocity) < 1) {
+                return null;
+              }
+
+              return {
+                ...req,
+                y: containerTop - BALL_RADIUS,
+                velocity: -velocity * 0.7 // Отскок с потерей энергии
               };
             }
-            
+
             // Применяем гравитацию
             velocity += gravity;
             y += velocity;
-            
+
             return { ...req, y, velocity };
           })
+          .filter(Boolean) // Удаляем null значения
           .filter(req => {
-            // Удаляем старые запросы (старше 3 секунд)
-            return now - req.created < 3000;
+            // Удаляем старые запросы (старше 5 секунд) и вылетевшие за пределы экрана
+            return now - req.created < 5000 && req.y < canvas.height + BALL_RADIUS;
           })
       );
-      
+
       // Рисуем запросы
       requests.forEach(req => {
         const absX = CONTAINER_PADDING + req.x * containerWidth;
-        
+
         ctx.beginPath();
         ctx.arc(absX, req.y, BALL_RADIUS, 0, Math.PI * 2);
         ctx.fillStyle = req.accepted ? 'limegreen' : 'tomato';
         ctx.fill();
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1;
+        ctx.stroke();
         ctx.closePath();
       });
-      
+
       animationFrameRef.current = requestAnimationFrame(animate);
     }
-    
+
     animate();
-    
+
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
   }, [requests, algorithmState, rpsLimit]);
-  
+
   // Обновляем размер холста при изменении размера окна
   useEffect(() => {
     function handleResize() {
@@ -180,13 +191,13 @@ export function FixedWindowIllustration({ rpsLimit, rps, running, algorithmState
         canvas.height = 300;
       }
     }
-    
+
     window.addEventListener('resize', handleResize);
     handleResize();
-    
+
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-  
+
   return (
     <div className="illustration">
       <h3 className="illustration__title">🪟 Fixed Window</h3>
@@ -194,7 +205,7 @@ export function FixedWindowIllustration({ rpsLimit, rps, running, algorithmState
         <canvas ref={canvasRef} className="illustration__canvas" />
       </div>
       <p className="illustration__description">
-        Простой подсчет запросов в фиксированном временном окне. 
+        Простой подсчет запросов в фиксированном временном окне.
         При истечении окна счетчик сбрасывается.
       </p>
     </div>
