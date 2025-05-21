@@ -1,3 +1,5 @@
+import { WINDOW_SIZE } from './constants.js';
+
 export function leakyBucket(options = {}) {
   const {
     limit = 5,         // лимит RPS по умолчанию

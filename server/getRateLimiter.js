@@ -1,3 +1,4 @@
+import { WINDOW_SIZE } from './limiters/constants.js';
 import {fixedWindow} from './limiters/fixedWindow.js';
 import {slidingLog} from './limiters/slidingLog.js';
 import {slidingCounter} from './limiters/slidingCounter.js';
@@ -23,7 +24,7 @@ export function getRateLimiter(name, rpsLimit = 5) {
     if (!limitersCache.has(cacheKey)) {
       limitersCache.set(cacheKey, factory({
         limit: rpsLimit,
-        windowSize: 10000 // 10 секунд по умолчанию
+        windowSize: WINDOW_SIZE // 10 секунд по умолчанию
       }));
     }
 

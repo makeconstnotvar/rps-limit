@@ -1,8 +1,10 @@
 // Интерфейс для алгоритмов ограничения скорости
+import { WINDOW_SIZE } from './constants.js';
+
 export const createAlgorithmState = (rpsLimit) => {
   return {
     // Базовые параметры, общие для всех алгоритмов
-    windowSize: 10000, // 10 секунд
+    windowSize: WINDOW_SIZE, // 10 секунд
     limit: rpsLimit,
     
     // Метод для обновления состояния при успешном запросе

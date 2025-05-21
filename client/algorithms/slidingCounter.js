@@ -1,3 +1,4 @@
+import { WINDOW_SIZE } from './constants.js';
 import { createAlgorithmState } from './algorithmInterface.js';
 
 export const createSlidingCounterState = (rpsLimit) => {

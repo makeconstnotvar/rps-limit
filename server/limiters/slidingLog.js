@@ -1,6 +1,8 @@
+import { WINDOW_SIZE } from './constants.js';
+
 export function slidingLog(options = {}) {
   const {
-    windowSize = 10000, // 10 секунд по умолчанию
+    windowSize = WINDOW_SIZE, // 10 секунд по умолчанию
     limit = 5,         // лимит RPS по умолчанию
     keyGenerator = req => req.ip // генератор ключа по умолчанию
   } = options;

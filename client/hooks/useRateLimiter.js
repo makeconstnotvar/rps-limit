@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'preact/hooks';
 import axios from 'axios';
+import { WINDOW_SIZE } from '../algorithms/constants.js';
 import { 
   createAlgorithmState, 
   handleRequest, 
@@ -93,7 +94,7 @@ export function useRateLimiter() {
     for (let i = 0; i < testRequests; i++) {
       // Обновляем историю для графика
       const now = Date.now();
-      const currentWindow = Math.floor(now / 1000);
+      const currentWindow = Math.floor(now / (WINDOW_SIZE / 1000));
       
       if (!statsHistory.current[currentWindow]) {
         statsHistory.current[currentWindow] = {
