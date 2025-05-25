@@ -1,17 +1,15 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 
-export function FixedWindowIllustration({ rpsLimit, rps, running }) {
+export function FixedWindowIllustration({ rpsLimit, rps, running, algorithmState }) {
   const canvasRef = useRef(null);
   const [requests, setRequests] = useState([]);
-  const [windowStart, setWindowStart] = useState(Date.now());
-  const [count, setCount] = useState(0);
   const animationFrameRef = useRef(null);
   const lastRequestTimeRef = useRef(0);
 
   // Константы для анимации
-  const WINDOW_DURATION = 1000; // 1 секунда
+  const WINDOW_DURATION = 10000; // 10 секунд (WINDOW_SIZE)
   const BALL_RADIUS = 10;
-  const CONTAINER_HEIGHT = 200;
+  const CONTAINER_HEIGHT = 50; // Уменьшенная высота полосы прогресса
   const CONTAINER_PADDING = 20;
 
   // Добавление нового запроса
@@ -22,14 +20,8 @@ export function FixedWindowIllustration({ rpsLimit, rps, running }) {
       const now = Date.now();
       lastRequestTimeRef.current = now;
 
-      // Проверяем, нужно ли сбросить окно
-      if (now - windowStart > WINDOW_DURATION) {
-        setWindowStart(now);
-        setCount(0);
-      }
-
       // Определяем, будет ли запрос принят
-      const accepted = count < rpsLimit;
+      const accepted = algorithmState.count < rpsLimit;
 
       // Добавляем новый запрос
       setRequests(prev => [
@@ -43,15 +35,10 @@ export function FixedWindowIllustration({ rpsLimit, rps, running }) {
           created: now
         }
       ]);
-
-      // Увеличиваем счетчик принятых запросов
-      if (accepted) {
-        setCount(prev => prev + 1);
-      }
     }, 1000 / rps);
 
     return () => clearInterval(interval);
-  }, [running, rps, rpsLimit, windowStart, count]);
+  }, [running, rps, rpsLimit, algorithmState]);
 
   // Анимация
   useEffect(() => {
@@ -81,7 +68,7 @@ export function FixedWindowIllustration({ rpsLimit, rps, running }) {
       );
 
       // Рисуем прогресс окна
-      const elapsed = now - windowStart;
+      const elapsed = now - algorithmState.windowStart;
       const progress = Math.min(1, elapsed / WINDOW_DURATION);
 
       ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
@@ -93,11 +80,11 @@ export function FixedWindowIllustration({ rpsLimit, rps, running }) {
       );
 
       // Рисуем счетчик
-      ctx.fillStyle = count > rpsLimit ? 'red' : '#333';
+      ctx.fillStyle = algorithmState.count > rpsLimit ? 'red' : '#333';
       ctx.font = 'bold 16px Arial';
       ctx.textAlign = 'center';
       ctx.fillText(
-        `${count} / ${rpsLimit}`,
+        `${algorithmState.count} / ${rpsLimit}`,
         canvas.width / 2,
         containerTop + CONTAINER_HEIGHT / 2
       );
@@ -113,8 +100,7 @@ export function FixedWindowIllustration({ rpsLimit, rps, running }) {
       );
 
       // Обновляем и рисуем запросы
-      setRequests(prev =>
-        prev
+      const updatedRequests = requests
           .map(req => {
             // Физика движения
             let { x, y, velocity, accepted } = req;
@@ -122,19 +108,21 @@ export function FixedWindowIllustration({ rpsLimit, rps, running }) {
             // Преобразуем относительные координаты в абсолютные
             const absX = CONTAINER_PADDING + x * containerWidth;
 
-            // Если запрос принят и достиг контейнера, останавливаем его
+            // Позиция верхней границы контейнера
             const containerY = containerTop - BALL_RADIUS;
 
+            // Если запрос принят и достиг контейнера, пропускаем его через окно
             if (accepted && y >= containerY) {
-              return { ...req, y: containerY, velocity: 0 };
+              // Увеличиваем скорость для пролета вниз
+              return { ...req, velocity: velocity + 1 };
             }
 
-            // Если запрос отклонен и достиг контейнера, отскакиваем
+            // Если запрос отклонен и достиг контейнера, останавливаем его
             if (!accepted && y >= containerY) {
               return {
                 ...req,
                 y: containerY,
-                velocity: -velocity * 0.6 // Отскок с потерей энергии
+                velocity: 0 // Останавливаем запрос у окна
               };
             }
 
@@ -145,13 +133,23 @@ export function FixedWindowIllustration({ rpsLimit, rps, running }) {
             return { ...req, y, velocity };
           })
           .filter(req => {
-            // Удаляем старые запросы (старше 3 секунд)
-            return now - req.created < 3000;
-          })
-      );
+            // Удаляем старые запросы:
+            // - Принятые запросы удаляем через 3 секунды
+            // - Отклоненные запросы удаляем через 1.5 секунды после достижения окна
+            if (req.accepted) {
+              return now - req.created < 3000;
+            } else {
+              // Если запрос отклонен и достиг окна, начинаем отсчет времени до удаления
+              const hasReachedWindow = req.y >= containerTop - BALL_RADIUS && req.velocity === 0;
+              return !hasReachedWindow || now - req.created < 1500;
+            }
+          });
+
+      // Обновляем состояние
+      setRequests(updatedRequests);
 
       // Рисуем запросы
-      requests.forEach(req => {
+      updatedRequests.forEach(req => {
         const absX = CONTAINER_PADDING + req.x * containerWidth;
 
         ctx.beginPath();
@@ -171,7 +169,7 @@ export function FixedWindowIllustration({ rpsLimit, rps, running }) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [requests, windowStart, count, rpsLimit]);
+  }, [requests, algorithmState, rpsLimit]);
 
   // Обновляем размер холста при изменении размера окна
   useEffect(() => {

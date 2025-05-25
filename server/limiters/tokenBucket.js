@@ -2,9 +2,10 @@ import { WINDOW_SIZE } from './constants.js';
 
 export function tokenBucket(options = {}) {
   const {
+    windowSize = WINDOW_SIZE, // 10 секунд по умолчанию
     limit = 5,         // лимит RPS по умолчанию
-    maxTokens = 5,     // максимум токенов по умолчанию
-    refillRate = 5,    // скорость пополнения (токенов/сек) по умолчанию
+    maxTokens = limit,     // максимум токенов по умолчанию
+    refillRate = limit / (windowSize / 1000),    // скорость пополнения (токенов/сек)
     keyGenerator = req => req.ip // генератор ключа по умолчанию
   } = options;
 

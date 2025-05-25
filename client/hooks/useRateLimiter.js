@@ -6,7 +6,8 @@ import {
   handleRequest, 
   handleRejection, 
   updateAlgorithmState as updateState,
-  resetAlgorithmState
+  resetAlgorithmState,
+  isRateLimited
 } from '../algorithms/index.js';
 
 export function useRateLimiter() {
@@ -94,7 +95,7 @@ export function useRateLimiter() {
     for (let i = 0; i < testRequests; i++) {
       // Обновляем историю для графика
       const now = Date.now();
-      const currentWindow = Math.floor(now / (WINDOW_SIZE / 1000));
+      const currentWindow = Math.floor(now / 1000); // 1-секундные окна для графика
       
       if (!statsHistory.current[currentWindow]) {
         statsHistory.current[currentWindow] = {
@@ -104,25 +105,34 @@ export function useRateLimiter() {
         };
       }
       
-      // Выполняем запрос и обновляем статистику
+      // Проверяем, превышен ли лимит запросов
       let requestDenied = false;
+      
+      // Сначала проверяем состояние алгоритма перед запросом
+      setAlgorithmState(prevState => {
+        // Для Fixed Window проверяем, превышен ли лимит
+        requestDenied = isRateLimited(prevState);
+        return prevState;
+      });
+      
+      // Выполняем запрос и обновляем статистику
       try {
-        await axios.get(`http://localhost:3000/api/test`);
-        setStats(prev => ({...prev, allowed: prev.allowed + 1}));
+        if (!requestDenied) {
+          await axios.get(`http://localhost:3000/api/test`);
+          setStats(prev => ({...prev, allowed: prev.allowed + 1}));
+          statsHistory.current[currentWindow].allowed++;
+          updateAlgorithmState(true); // Запрос успешен
+        } else {
+          setStats(prev => ({...prev, denied: prev.denied + 1}));
+          statsHistory.current[currentWindow].denied++;
+          updateAlgorithmState(false); // Запрос отклонен
+        }
       } catch (error) {
         if (error.response?.status === 429) {
           setStats(prev => ({...prev, denied: prev.denied + 1}));
-          requestDenied = true;
+          statsHistory.current[currentWindow].denied++;
+          updateAlgorithmState(false); // Запрос отклонен
         }
-      }
-      
-      // Обновляем статистику в текущем окне
-      if (requestDenied) {
-        statsHistory.current[currentWindow].denied++;
-        updateAlgorithmState(false); // Запрос отклонен
-      } else {
-        statsHistory.current[currentWindow].allowed++;
-        updateAlgorithmState(true); // Запрос успешен
       }
       
       // Обновляем данные графика после каждого запроса
@@ -153,7 +163,7 @@ export function useRateLimiter() {
     timer.current = setInterval(async () => {
       // Обновляем историю для графика в реальном времени
       const now = Date.now();
-      const currentWindow = Math.floor(now / 1000); // 1-секундные окна
+      const currentWindow = Math.floor(now / 1000); // 1-секундные окна для графика
       
       if (!statsHistory.current[currentWindow]) {
         statsHistory.current[currentWindow] = {
@@ -171,25 +181,34 @@ export function useRateLimiter() {
         });
       }
       
-      // Выполняем запрос и обновляем статистику
+      // Проверяем, превышен ли лимит запросов
       let requestDenied = false;
+      
+      // Сначала проверяем состояние алгоритма перед запросом
+      setAlgorithmState(prevState => {
+        // Для Fixed Window проверяем, превышен ли лимит
+        requestDenied = isRateLimited(prevState);
+        return prevState;
+      });
+      
+      // Выполняем запрос и обновляем статистику
       try {
-        await axios.get(`http://localhost:3000/api/test`);
-        setStats(prev => ({...prev, allowed: prev.allowed + 1}));
+        if (!requestDenied) {
+          await axios.get(`http://localhost:3000/api/test`);
+          setStats(prev => ({...prev, allowed: prev.allowed + 1}));
+          statsHistory.current[currentWindow].allowed++;
+          updateAlgorithmState(true); // Запрос успешен
+        } else {
+          setStats(prev => ({...prev, denied: prev.denied + 1}));
+          statsHistory.current[currentWindow].denied++;
+          updateAlgorithmState(false); // Запрос отклонен
+        }
       } catch (error) {
         if (error.response?.status === 429) {
           setStats(prev => ({...prev, denied: prev.denied + 1}));
-          requestDenied = true;
+          statsHistory.current[currentWindow].denied++;
+          updateAlgorithmState(false); // Запрос отклонен
         }
-      }
-      
-      // Обновляем статистику в текущем окне
-      if (requestDenied) {
-        statsHistory.current[currentWindow].denied++;
-        updateAlgorithmState(false); // Запрос отклонен
-      } else {
-        statsHistory.current[currentWindow].allowed++;
-        updateAlgorithmState(true); // Запрос успешен
       }
       
       // Обновляем данные графика после каждого запроса

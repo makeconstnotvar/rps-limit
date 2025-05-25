@@ -2,9 +2,10 @@ import { WINDOW_SIZE } from './constants.js';
 
 export function leakyBucket(options = {}) {
   const {
+    windowSize = WINDOW_SIZE, // 10 секунд по умолчанию
     limit = 5,         // лимит RPS по умолчанию
-    maxQueueSize = 5,  // максимальный размер очереди по умолчанию
-    processRate = 5,   // скорость обработки (запросов/сек) по умолчанию
+    maxQueueSize = limit,  // максимальный размер очереди
+    processRate = limit / (windowSize / 1000),   // скорость обработки (запросов/сек)
     keyGenerator = req => req.ip // генератор ключа по умолчанию
   } = options;
 

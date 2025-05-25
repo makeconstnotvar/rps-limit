@@ -22,7 +22,14 @@ export const createFixedWindowState = (rpsLimit) => {
     },
     
     handleRejection() {
-      // Для Fixed Window нет специальной обработки отклоненных запросов
+      const now = Date.now();
+      
+      // Проверяем, нужно ли сбросить окно
+      if (now - this.windowStart > this.windowSize) {
+        this.windowStart = now;
+        this.count = 0; // Окно сбрасывается, но запрос отклонен
+      }
+      
       return { ...this };
     },
     
